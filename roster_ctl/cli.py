@@ -1,19 +1,10 @@
-import argparse
 import cmd
 
-
-class Agent:
-    def __init__(self, name):
-        self.name = name
-        self.tasks = []
-
-    def assign_task(self, task_description):
-        # Implement task assignment logic here
-        pass
+from agents import Agent
 
 
 class AgentManagerCLI(cmd.Cmd):
-    prompt = "rosterctl> "
+    prompt = "roster-ctl> "
 
     def __init__(self):
         super().__init__()
@@ -46,10 +37,3 @@ class AgentManagerCLI(cmd.Cmd):
 
     def emptyline(self):
         pass
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Agent Manager CLI")
-    args = parser.parse_args()
-
-    AgentManagerCLI().cmdloop()
