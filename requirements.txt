@@ -1,0 +1,6 @@
+openai>=0.27.4
+langchain==0.0.148
+pytest==7.3.1
+black==23.3.0
+tiktoken==0.3.3
+llama-index==0.5.23.post1
