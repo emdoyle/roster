@@ -1,23 +1,34 @@
 import cmd
 
-from agents import Agent
+from agents import AbstractAgent, OpenAIAgent
+from resources import Agent
+from utils import get_random_name
+
+KNOWN_AGENTS = {
+    "openai": OpenAIAgent,
+}
+
+DEFAULT_AGENT_RESOURCE = Agent.from_yaml("resources/samples/simple_agent.yml")
 
 
-class AgentManagerCLI(cmd.Cmd):
+class RosterCLI(cmd.Cmd):
     prompt = "roster-ctl> "
 
     def __init__(self):
         super().__init__()
-        self.agents = {}
+        self.agents: dict[str, AbstractAgent] = {}
 
     def do_add_agent(self, line):
         args = line.split()
         if len(args) != 1:
-            print("Usage: add_agent agent_name")
+            print("Usage: add_agent agent_type (agent_name)")
             return
-        agent_name = args[0]
-        self.agents[agent_name] = Agent(agent_name)
-        print(f"Agent '{agent_name}' added.")
+        agent_type = args[0]
+        agent_name = args[1] if len(args) == 2 else get_random_name()
+        self.agents[agent_name] = KNOWN_AGENTS[agent_type].from_resource(
+            DEFAULT_AGENT_RESOURCE
+        )
+        print(f"Agent '{agent_name}' [{agent_type}] added.")
 
     def do_assign_task(self, line):
         args = line.split()

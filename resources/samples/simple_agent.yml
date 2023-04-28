@@ -1,0 +1,10 @@
+backend:
+  model: "gpt-3.5"
+prompt:
+  strategy: "Reflexion"
+  tools:
+    - "py-exec"
+    - "ponder"
+    - "memorize"
+memory:
+  strategy: "similar-retrieval"

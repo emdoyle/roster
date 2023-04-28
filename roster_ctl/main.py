@@ -1,5 +1,5 @@
-from .cli import AgentManagerCLI
+from .cli import RosterCLI
 
 
 def main():
-    AgentManagerCLI().cmdloop()
+    RosterCLI().cmdloop()
