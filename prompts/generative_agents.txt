@@ -1,0 +1,12 @@
+{observations}
+
+Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements? Provide each question on a new line.
+
+Statements about {topic}
+{related_statements}
+
+What 5 high-level insights can you infer from the above statements? (example format: insight (because of 1, 5, 3))
+
+On the scale of 1 to 10, where 1 is purely mundane (e.g., brushing teeth, making bed) and 10 is extremely poignant (e.g., a break up, college acceptance), rate the likely poignancy of the following piece of memory. Respond with a single integer.
+Memory: {memory_content}
+Rating:

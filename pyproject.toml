@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry>=1.1.0"]
+build-backend = "poetry.masonry.api"
 
 [tool.poetry]
 name = "roster-ctl"
@@ -10,8 +10,6 @@ authors = ["Evan Doyle <evanmdoyle@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-openai = ">=0.27.4"
-langchain = "==0.0.142"
 tiktoken = "==0.3.3"
 llama-index = "==0.5.22"
 
