@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  roster-api:
+    image: 'roster-ai/roster-api:latest'
+    environment:
+      - ROSTER_API_ETCD_HOST=Etcd
+    ports:
+      - "7888:7888"
+  Etcd:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"

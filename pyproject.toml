@@ -10,7 +10,8 @@ authors = ["Evan Doyle <evanmdoyle@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-python-etcd = "^0.4.5"
+etcd3 = "^0.12.0"
+protobuf = "==3.20.3"
 fastapi = "^0.95.1"
 uvicorn = "^0.22.0"
 environs = "^9.5.0"
