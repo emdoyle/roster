@@ -3,20 +3,21 @@ requires = ["poetry>=1.1.0"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
-name = "roster-ctl"
+name = "roster-api"
 version = "0.1.0"
-description = "Roster CLI tool"
+description = "Roster API Server"
 authors = ["Evan Doyle <evanmdoyle@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-tiktoken = "==0.3.3"
-llama-index = "==0.5.22"
+python-etcd = "^0.4.5"
+fastapi = "^0.95.1"
+uvicorn = "^0.22.0"
+environs = "^9.5.0"
 
 [tool.poetry.dev-dependencies]
 black = "==23.3.0"
 pytest = "==7.3.1"
-twine = "==4.0.2"
 
 [tool.poetry.scripts]
-roster-ctl = "roster_ctl:main"
+roster-api = "roster_api:main"
