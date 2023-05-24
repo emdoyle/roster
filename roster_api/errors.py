@@ -41,3 +41,16 @@ class AgentNotFoundError(AgentError):
     ):
         super().__init__(message, details)
         self.agent = agent
+
+
+class ListenerDisconnectedError(RosterAPIError):
+    """Exception raised when a listener is disconnected."""
+
+    def __init__(
+        self,
+        message="The listener is disconnected.",
+        details=None,
+        listener=None,
+    ):
+        super().__init__(message, details)
+        self.listener = listener

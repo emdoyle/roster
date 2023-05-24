@@ -1,7 +1,11 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from roster_api import errors
 from roster_api.models.agent import AgentSpec
 from roster_api.services.agent import AgentService
+from roster_api.watchers.agent import get_agent_resource_watcher
 
 router = APIRouter()
 
@@ -36,3 +40,28 @@ def delete_agent(name: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Agent not found")
     return deleted
+
+
+@router.get("/agent-events")
+async def events():
+
+    event_queue = asyncio.Queue()
+
+    def listener(event):
+        event_queue.put_nowait(f"data: {event}\n\n")
+
+    async def event_stream():
+        while True:
+            try:
+                yield await event_queue.get()
+            except Exception:
+                get_agent_resource_watcher().remove_listener(listener)
+
+    get_agent_resource_watcher().add_listener(listener)
+
+    response = StreamingResponse(event_stream(), media_type="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+    response.headers["Transfer-Encoding"] = "chunked"
+
+    return response

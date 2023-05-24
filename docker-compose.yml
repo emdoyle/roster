@@ -3,8 +3,22 @@ version: '2'
 services:
   roster-api:
     image: 'roster-ai/roster-api:latest'
+    command:
+      - "poetry"
+      - "run"
+      - "uvicorn"
+      - "--factory"
+      - "roster_api.main:get_app"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "7888"
+      - "--reload"
     environment:
+      - ROSTER_API_DEBUG=1
       - ROSTER_API_ETCD_HOST=Etcd
+    volumes:
+      - ./roster_api:/app/roster_api
     ports:
       - "7888:7888"
   Etcd:
