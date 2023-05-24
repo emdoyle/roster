@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 
 import etcd3
-from roster_api import errors
+from roster_api import constants, errors
 from roster_api.db.etcd import get_etcd_client
 from roster_api.models.agent import AgentResource, AgentSpec
+
+logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class AgentService:
@@ -28,6 +31,7 @@ class AgentService:
         )
         if not created:
             raise errors.AgentAlreadyExistsError(agent=agent)
+        logger.debug(f"Created Agent {agent.name}.")
         return agent_resource
 
     def get_agent(self, name: str, namespace: str = DEFAULT_NAMESPACE) -> AgentResource:
@@ -44,9 +48,12 @@ class AgentService:
         agent_resource = self.get_agent(agent.name, namespace)
         agent_resource.spec = agent
         self.etcd_client.put(agent_key, agent_resource.serialize())
+        logger.debug(f"Updated Agent {agent.name}.")
         return agent_resource
 
     def delete_agent(self, name: str, namespace: str = DEFAULT_NAMESPACE) -> bool:
         agent_key = self._get_agent_key(name, namespace)
         deleted = self.etcd_client.delete(agent_key)
+        if deleted:
+            logger.debug(f"Deleted Agent {name}.")
         return deleted

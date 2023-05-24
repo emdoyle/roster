@@ -1,11 +1,14 @@
+import logging
 import threading
 from typing import Callable, Optional
 
 import etcd3
-from roster_api import settings
+from roster_api import constants, settings
 
 from ..db.etcd import wait_for_etcd
 from .base import BaseWatcher
+
+logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class EtcdResourceWatcher(BaseWatcher):
@@ -29,19 +32,19 @@ class EtcdResourceWatcher(BaseWatcher):
         events_iterator, cancel = self.client.watch_prefix(self.resource_prefix)
         self.cancel = cancel
         for event in events_iterator:
-            print(f"(etcd) Received event: {event}")
+            logger.debug(f"(etcd) Received event: {event}")
             for listener in self.listeners:
                 try:
                     listener(event)
                 except Exception as e:
-                    # TODO: log error
-                    print(f"(etcd) Error in listener {listener}: {e}")
+                    logger.exception(f"(etcd) Error in listener {listener}: {e}")
 
     def start(self):
         if self.thread is not None:
             raise RuntimeError("Watcher already running")
         self.thread = threading.Thread(target=self.watch)
         self.thread.start()
+        logger.debug("(etcd) Watcher started")
 
     def stop(self):
         if self.thread is None or self.cancel is None:
@@ -50,6 +53,7 @@ class EtcdResourceWatcher(BaseWatcher):
         self.cancel = None
         self.thread.join()
         self.thread = None
+        logger.debug("(etcd) Watcher stopped")
 
     def add_listener(self, listener: Callable):
         self.listeners.append(listener)
