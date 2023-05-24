@@ -11,7 +11,6 @@ from .api.state.agent import router as agent_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 logger.setLevel(settings.SERVER_LOG_LEVEL)
-log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 logs_enabled = False
 
@@ -24,7 +23,8 @@ def setup_logging():
         return
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_format = logging.Formatter(log_format)
+    console_log_format = "%(levelname)s:\t [log] %(message)s"
+    console_format = logging.Formatter(console_log_format)
     console_handler.setFormatter(console_format)
     logger.addHandler(console_handler)
 
@@ -32,7 +32,8 @@ def setup_logging():
         settings.SERVER_LOG, maxBytes=1000000
     )
     file_handler.setLevel(logging.DEBUG)
-    file_format = logging.Formatter(log_format)
+    file_log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file_format = logging.Formatter(file_log_format)
     file_handler.setFormatter(file_format)
     logger.addHandler(file_handler)
 
