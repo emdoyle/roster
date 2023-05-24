@@ -1,5 +1,6 @@
 # Must be built from the root of the repository
 FROM python:3.10
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 

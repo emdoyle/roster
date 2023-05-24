@@ -1,8 +1,14 @@
-from typing import Callable, Optional
+import json
+from typing import TYPE_CHECKING, Callable, Optional
 
 from roster_api import errors
+from roster_api.events.agent import DeleteAgentSpecEvent, PutAgentSpecEvent
+from roster_api.models.agent import AgentSpec
 from roster_api.watchers.base import BaseWatcher
 from roster_api.watchers.etcd import EtcdResourceWatcher
+
+if TYPE_CHECKING:
+    import etcd3
 
 AGENT_RESOURCE_WATCHER: Optional["AgentResourceWatcher"] = None
 
@@ -25,8 +31,28 @@ class AgentResourceWatcher(BaseWatcher):
             resource_prefix=self.KEY_PREFIX, listeners=[self._handle_event]
         )
 
+    @classmethod
+    def _process_event(cls, event: "etcd3.events.Event"):
+        try:
+            key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
+            namespace, name = key.split("/")
+            if "Put" in str(event.__class__):
+                return PutAgentSpecEvent(
+                    namespace=namespace,
+                    name=name,
+                    spec=AgentSpec.parse_raw(event.value),
+                )
+            elif "Delete" in str(event.__class__):
+                return DeleteAgentSpecEvent(namespace=namespace, name=name)
+        except Exception as e:
+            raise errors.InvalidEventError(f"Invalid event: {event}") from e
+
     def _handle_event(self, event):
-        # Process event before listeners receive it
+        try:
+            event = self._process_event(event)
+        except errors.InvalidEventError as e:
+            print(f"(agent) Error processing event: {e}")
+            return
         print(f"(agent) Received event: {event}")
         listeners = self.listeners.copy()
         for listener in listeners:

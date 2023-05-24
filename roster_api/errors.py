@@ -54,3 +54,16 @@ class ListenerDisconnectedError(RosterAPIError):
     ):
         super().__init__(message, details)
         self.listener = listener
+
+
+class InvalidEventError(RosterAPIError):
+    """Exception raised when an invalid event is received."""
+
+    def __init__(
+        self,
+        message="The event is invalid.",
+        details=None,
+        event=None,
+    ):
+        super().__init__(message, details)
+        self.event = event

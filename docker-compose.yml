@@ -15,6 +15,7 @@ services:
       - "7888"
       - "--reload"
     environment:
+      - PYTHONUNBUFFERED=1
       - ROSTER_API_DEBUG=1
       - ROSTER_API_ETCD_HOST=Etcd
     volumes:
