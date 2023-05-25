@@ -1,13 +1,9 @@
+import json
 import logging
 from typing import TYPE_CHECKING, Callable, Optional
 
 from roster_api import constants, errors
-from roster_api.events.agent import (
-    AgentSpecEvent,
-    DeleteAgentSpecEvent,
-    PutAgentSpecEvent,
-)
-from roster_api.models.agent import AgentSpec
+from roster_api.events.spec import DeleteSpecEvent, PutSpecEvent, SpecEvent
 from roster_api.watchers.base import BaseWatcher
 from roster_api.watchers.etcd import EtcdResourceWatcher
 
@@ -38,18 +34,19 @@ class AgentResourceWatcher(BaseWatcher):
         )
 
     @classmethod
-    def _process_event(cls, event: "etcd3.events.Event") -> AgentSpecEvent:
+    def _process_event(cls, event: "etcd3.events.Event") -> SpecEvent:
         try:
             key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
             namespace, name = key.split("/")
             if "Put" in str(event.__class__):
-                return PutAgentSpecEvent(
-                    namespace=namespace,
-                    name=name,
-                    spec=AgentSpec.parse_raw(event.value),
+                spec = (json.loads(event.value.decode()),)
+                return PutSpecEvent(
+                    resource_type="AGENT", namespace=namespace, name=name, spec=spec
                 )
             elif "Delete" in str(event.__class__):
-                return DeleteAgentSpecEvent(namespace=namespace, name=name)
+                return DeleteSpecEvent(
+                    resource_type="AGENT", namespace=namespace, name=name
+                )
         except Exception as e:
             raise errors.InvalidEventError(f"Invalid event: {event}") from e
 
@@ -74,7 +71,7 @@ class AgentResourceWatcher(BaseWatcher):
 
     def start(self):
         self._watcher.start()
-        logger.info("Watching Agent resources")
+        logger.info("Starting agent watcher")
 
     def stop(self):
         self._watcher.stop()

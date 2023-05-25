@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from roster_api import constants, errors
-from roster_api.events.agent import AgentSpecEvent
+from roster_api.events.spec import SpecEvent
 from roster_api.models.agent import AgentSpec
 from roster_api.services.agent import AgentService
 from roster_api.watchers.agent import get_agent_resource_watcher
@@ -51,7 +51,7 @@ async def events(request: Request):
 
     event_queue = asyncio.Queue()
 
-    def listener(event: AgentSpecEvent):
+    def listener(event: SpecEvent):
         event_queue.put_nowait(f"data: {event.serialize()}\n\n")
 
     async def event_stream():

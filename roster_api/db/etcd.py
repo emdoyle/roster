@@ -1,18 +1,16 @@
 import logging
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from roster_api import constants, settings
+import etcd3
+from roster_api import constants, errors, settings
 
-if TYPE_CHECKING:
-    import etcd3
-
-ETCD_CLIENT: Optional["etcd3.Etcd3Client"] = None
+ETCD_CLIENT: Optional[etcd3.Etcd3Client] = None
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-def get_etcd_client() -> "etcd3.Etcd3Client":
+def get_etcd_client() -> etcd3.Etcd3Client:
     global ETCD_CLIENT
     if ETCD_CLIENT is not None:
         return ETCD_CLIENT
@@ -24,21 +22,24 @@ def get_etcd_client() -> "etcd3.Etcd3Client":
 
 
 def wait_for_etcd(
-    client: Optional["etcd3.Etcd3Client"] = None, retries: int = 10, delay: float = 1
+    client: Optional[etcd3.Etcd3Client] = None, retries: int = 10, delay: float = 1
 ):
     client = client or get_etcd_client()
     for i in range(retries):
         try:
-            logger.debug(f"(wait_for_etcd): {client.status()}")
+            status = client.status()
+            logger.debug("(wait_for_etcd): %s", status)
             return
         except (
             etcd3.exceptions.ConnectionFailedError,
             etcd3.exceptions.ConnectionTimeoutError,
         ):
-            logger.debug(f"(wait_for_etcd): Failed to connect to etcd")
+            logger.debug("(wait_for_etcd): Failed to connect to etcd")
             if i < retries - 1:
-                logger.debug(f"(wait_for_etcd): Retrying in {delay} seconds")
+                logger.debug("(wait_for_etcd): Retrying in %s seconds", delay)
                 time.sleep(delay)
             else:
-                logger.debug(f"(wait_for_etcd): No more retries")
-                raise
+                logger.debug("(wait_for_etcd): No more retries")
+                raise errors.RosterAPIError(
+                    "Failed to connect to etcd to watch resources."
+                )

@@ -29,6 +29,7 @@ class EtcdResourceWatcher(BaseWatcher):
     def watch(self):
         wait_for_etcd(self.client)
 
+        logger.debug("(etcd) Watcher started")
         events_iterator, cancel = self.client.watch_prefix(self.resource_prefix)
         self.cancel = cancel
         for event in events_iterator:
@@ -44,7 +45,6 @@ class EtcdResourceWatcher(BaseWatcher):
             raise RuntimeError("Watcher already running")
         self.thread = threading.Thread(target=self.watch)
         self.thread.start()
-        logger.debug("(etcd) Watcher started")
 
     def stop(self):
         if self.thread is None or self.cancel is None:
