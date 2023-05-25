@@ -22,6 +22,11 @@ def create_agent(agent: AgentSpec):
         raise HTTPException(status_code=409, detail=e.message)
 
 
+@router.get("/agents", tags=["AgentSpec"])
+def list_agents():
+    return AgentService().list_agents()
+
+
 @router.get("/agents/{name}", tags=["AgentSpec"])
 def get_agent(name: str):
     try:

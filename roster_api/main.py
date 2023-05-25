@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
 
 def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
-    app.include_router(agent_router, prefix=f"/api/{constants.API_VERSION}")
+    app.include_router(agent_router, prefix=f"/{constants.API_VERSION}")
     return app
 
 
