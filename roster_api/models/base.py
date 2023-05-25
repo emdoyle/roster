@@ -1,7 +1,11 @@
 import json
+import logging
 
 from pydantic import BaseModel, Field, constr
+from roster_api import constants
 from roster_api.constants import API_VERSION
+
+logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class RosterResource(BaseModel):
@@ -20,5 +24,6 @@ class RosterResource(BaseModel):
         return json.dumps(self.json()).encode("utf-8")
 
     @classmethod
-    def deserialize(cls, data: bytes) -> "RosterResource":
-        return cls.parse_raw(data.decode("utf-8"))
+    def deserialize_from_etcd(cls, data: bytes) -> "RosterResource":
+        # SSE data is double-encoded
+        return cls(**json.loads(json.loads(data.decode("utf-8"))))

@@ -31,7 +31,7 @@ class AgentService:
         )
         if not created:
             raise errors.AgentAlreadyExistsError(agent=agent)
-        logger.debug(f"Created Agent {agent.name}.")
+        logger.debug("Created Agent %s", agent.name)
         return agent_resource
 
     def get_agent(self, name: str, namespace: str = DEFAULT_NAMESPACE) -> AgentResource:
@@ -39,12 +39,12 @@ class AgentService:
         agent_data, _ = self.etcd_client.get(agent_key)
         if not agent_data:
             raise errors.AgentNotFoundError(agent=name)
-        return AgentResource.deserialize(agent_data)
+        return AgentResource.deserialize_from_etcd(agent_data)
 
     def list_agents(self, namespace: str = DEFAULT_NAMESPACE) -> list[AgentResource]:
         agent_key = self._get_agent_key("", namespace)
         agent_data = self.etcd_client.get_prefix(agent_key)
-        return [AgentResource.deserialize(data) for _, data in agent_data]
+        return [AgentResource.deserialize_from_etcd(data) for data, _ in agent_data]
 
     def update_agent(
         self, agent: AgentSpec, namespace: str = DEFAULT_NAMESPACE

@@ -57,18 +57,19 @@ async def events(request: Request):
     event_queue = asyncio.Queue()
 
     def listener(event: SpecEvent):
-        event_queue.put_nowait(f"data: {event.serialize()}\n\n")
+        event_queue.put_nowait(event.serialize() + b"\n\n")
 
     async def event_stream():
         try:
             while True:
                 if await request.is_disconnected():
+                    logger.debug(f"Client disconnected ({request.client.host})")
                     break
 
                 result = await event_queue.get()
                 logger.debug(f"SSE Send ({request.client.host})")
                 yield result
-        finally:
+        except asyncio.CancelledError:
             logger.debug(f"Stopping SSE stream for {request.client.host}")
             get_agent_resource_watcher().remove_listener(listener)
 

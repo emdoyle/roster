@@ -39,24 +39,29 @@ class AgentResourceWatcher(BaseWatcher):
             key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
             namespace, name = key.split("/")
             if "Put" in str(event.__class__):
-                spec = (json.loads(event.value.decode()),)
+                # SSE events are double-encoded
+                resource = json.loads(json.loads(event.value.decode("utf-8")))
                 return PutSpecEvent(
-                    resource_type="AGENT", namespace=namespace, name=name, spec=spec
+                    resource_type="AGENT",
+                    namespace=namespace,
+                    name=name,
+                    spec=resource["spec"],
                 )
             elif "Delete" in str(event.__class__):
                 return DeleteSpecEvent(
                     resource_type="AGENT", namespace=namespace, name=name
                 )
         except Exception as e:
+            logger.error("(agent) Error processing event: %s", e)
             raise errors.InvalidEventError(f"Invalid event: {event}") from e
 
     def _handle_event(self, event: "etcd3.events.Event"):
         try:
             event = self._process_event(event)
         except errors.InvalidEventError as e:
-            logger.debug(f"(agent) Error processing event: {e}")
+            logger.debug("(agent) Error processing event: %s", e)
             return
-        logger.debug(f"(agent) Received event: {event}")
+        logger.debug("(agent) Received event: %s", event)
         listeners = self.listeners.copy()
         for listener in listeners:
             try:
@@ -64,7 +69,7 @@ class AgentResourceWatcher(BaseWatcher):
             except errors.ListenerDisconnectedError:
                 self.listeners.remove(listener)
             except Exception as e:
-                logger.exception(f"(agent) Error in listener {listener}: {e}")
+                logger.exception("(agent) Error in listener %s: %s", listener, e)
 
     def watch(self):
         self._watcher.watch()
