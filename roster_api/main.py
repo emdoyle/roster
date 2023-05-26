@@ -8,6 +8,7 @@ from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
 from .api.state.agent import router as agent_router
+from .api.state.updates import router as updates_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 logger.setLevel(settings.SERVER_LOG_LEVEL)
@@ -61,6 +62,7 @@ async def lifespan(app: FastAPI):
 def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
     app.include_router(agent_router, prefix=f"/{constants.API_VERSION}")
+    app.include_router(updates_router, prefix=f"/{constants.API_VERSION}")
     return app
 
 

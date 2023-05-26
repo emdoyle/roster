@@ -2,9 +2,11 @@ import logging
 from typing import Optional
 
 import etcd3
+import pydantic
 from roster_api import constants, errors
 from roster_api.db.etcd import get_etcd_client
-from roster_api.models.agent import AgentResource, AgentSpec
+from roster_api.events.status import StatusEvent
+from roster_api.models.agent import AgentResource, AgentSpec, AgentStatus
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
@@ -62,3 +64,39 @@ class AgentService:
         if deleted:
             logger.debug(f"Deleted Agent {name}.")
         return deleted
+
+    def _handle_agent_status_put(self, status_update: StatusEvent):
+        agent_key = self._get_agent_key(status_update.name)
+        agent_data, _ = self.etcd_client.get(agent_key)
+        if not agent_data:
+            raise errors.AgentNotFoundError(agent=status_update.name)
+        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
+        try:
+            updated_status = AgentStatus(
+                host_ip=status_update.host_ip, **status_update.status
+            )
+        except (TypeError, pydantic.ValidationError) as e:
+            raise errors.InvalidEventError(event=status_update) from e
+        agent_resource.status = updated_status
+        self.etcd_client.put(agent_key, agent_resource.serialize())
+        logger.debug(f"Updated Agent {status_update.name} status.")
+
+    def _handle_agent_status_delete(self, status_update: StatusEvent):
+        agent_key = self._get_agent_key(status_update.name)
+        agent_data, _ = self.etcd_client.get(agent_key)
+        if not agent_data:
+            raise errors.AgentNotFoundError(agent=status_update.name)
+        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
+        agent_resource.status = AgentStatus(name=status_update.name, status="deleted")
+        self.etcd_client.put(agent_key, agent_resource.serialize())
+        logger.debug(f"Deleted Agent {status_update.name} status.")
+
+    def handle_agent_status_update(self, status_update: StatusEvent):
+        if status_update.event_type == "PUT":
+            self._handle_agent_status_put(status_update)
+        elif status_update.event_type == "DELETE":
+            self._handle_agent_status_delete(status_update)
+        else:
+            logger.warning(
+                f"Received status update for unknown event type: {status_update.event_type}"
+            )
