@@ -79,17 +79,18 @@ class AgentService:
             raise errors.InvalidEventError(event=status_update) from e
         agent_resource.status = updated_status
         self.etcd_client.put(agent_key, agent_resource.serialize())
-        logger.debug(f"Updated Agent {status_update.name} status.")
+        logger.debug("Updated Agent %s status.", status_update.name)
 
     def _handle_agent_status_delete(self, status_update: StatusEvent):
         agent_key = self._get_agent_key(status_update.name)
         agent_data, _ = self.etcd_client.get(agent_key)
         if not agent_data:
-            raise errors.AgentNotFoundError(agent=status_update.name)
+            logger.debug("Agent %s already deleted.", status_update.name)
+            return
         agent_resource = AgentResource.deserialize_from_etcd(agent_data)
         agent_resource.status = AgentStatus(name=status_update.name, status="deleted")
         self.etcd_client.put(agent_key, agent_resource.serialize())
-        logger.debug(f"Deleted Agent {status_update.name} status.")
+        logger.debug("Deleted Agent %s status.", status_update.name)
 
     def handle_agent_status_update(self, status_update: StatusEvent):
         if status_update.event_type == "PUT":
@@ -98,5 +99,6 @@ class AgentService:
             self._handle_agent_status_delete(status_update)
         else:
             logger.warning(
-                f"Received status update for unknown event type: {status_update.event_type}"
+                "Received status update for unknown event type: %s",
+                status_update.event_type,
             )

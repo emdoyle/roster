@@ -30,7 +30,9 @@ class EtcdResourceWatcher(BaseWatcher):
         wait_for_etcd(self.client)
 
         logger.debug("(etcd) Watcher started")
-        events_iterator, cancel = self.client.watch_prefix(self.resource_prefix)
+        events_iterator, cancel = self.client.watch_prefix(
+            self.resource_prefix, prev_kv=True
+        )
         self.cancel = cancel
         for event in events_iterator:
             logger.debug(f"(etcd) Received event: {event}")

@@ -34,34 +34,63 @@ class AgentResourceWatcher(BaseWatcher):
         )
 
     @classmethod
-    def _process_event(cls, event: "etcd3.events.Event") -> SpecEvent:
+    def _process_event(cls, event: "etcd3.events.Event") -> Optional[SpecEvent]:
         try:
             key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
             namespace, name = key.split("/")
             if "Put" in str(event.__class__):
                 # SSE events are double-encoded
                 resource = json.loads(json.loads(event.value.decode("utf-8")))
-                return PutSpecEvent(
-                    resource_type="AGENT",
-                    namespace=namespace,
-                    name=name,
-                    spec=resource["spec"],
-                )
+                prev_value = getattr(event, "prev_value", None)
+                prev_resource = None
+                if prev_value:
+                    try:
+                        prev_resource = json.loads(
+                            json.loads(prev_value.decode("utf-8"))
+                        )
+                    except json.JSONDecodeError as e:
+                        logger.warning(
+                            "(agent) Error decoding prev_value in etcd event: %s", e
+                        )
+
+                if prev_resource is not None:
+                    # This is an update event
+                    if resource["spec"] != prev_resource["spec"]:
+                        return PutSpecEvent(
+                            resource_type="AGENT",
+                            namespace=namespace,
+                            name=name,
+                            spec=resource["spec"],
+                        )
+                    # No spec change, so ignore
+                    logger.debug("(agent) Ignoring event: %s", event)
+                    return None
+                else:
+                    # This is a create event
+                    return PutSpecEvent(
+                        resource_type="AGENT",
+                        namespace=namespace,
+                        name=name,
+                        spec=resource["spec"],
+                    )
             elif "Delete" in str(event.__class__):
                 return DeleteSpecEvent(
                     resource_type="AGENT", namespace=namespace, name=name
                 )
         except Exception as e:
-            logger.error("(agent) Error processing event: %s", e)
+            logger.debug("(agent) Error processing event: %s", e)
             raise errors.InvalidEventError(f"Invalid event: {event}") from e
 
     def _handle_event(self, event: "etcd3.events.Event"):
+        logger.debug("(agent) Received event: %s", event)
         try:
             event = self._process_event(event)
         except errors.InvalidEventError as e:
-            logger.debug("(agent) Error processing event: %s", e)
+            logger.warning("Failed to process agent event from etcd: %s", e)
             return
-        logger.debug("(agent) Received event: %s", event)
+        if event is None:
+            return
+        logger.debug("(agent) Sending spec event: %s", event)
         listeners = self.listeners.copy()
         for listener in listeners:
             try:
