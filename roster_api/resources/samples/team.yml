@@ -1,0 +1,28 @@
+apiVersion: roster/v0.1
+kind: Team
+metadata:
+  name: Alpha Team
+
+spec:
+  layoutRef: py-software-dev
+  members:
+    backend:
+      name: Alice
+      image: langchain-roster
+      capabilities:
+        network_access: True
+        messaging_access: True
+    db:
+      name: Bob
+      image: langchain-roster
+      capabilities:
+        network_access: True
+        messaging_access: True
+    frontend:
+      name: Charlie
+      image: langchain-roster
+      capabilities:
+        network_access: True
+        messaging_access: True
+    manager:
+      agentRef: Manager

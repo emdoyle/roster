@@ -51,7 +51,7 @@ def delete_agent(name: str):
     return deleted
 
 
-@router.get("/agent-events")
+@router.get("/agent-events", tags=["AgentSpec"])
 async def events(request: Request):
 
     event_queue = asyncio.Queue()

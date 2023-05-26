@@ -1,0 +1,10 @@
+apiVersion: roster/v0.1
+kind: Agent
+metadata:
+  name: Alice
+
+spec:
+  image: langchain-roster
+  capabilities:
+    network_access: True
+    messaging_access: True

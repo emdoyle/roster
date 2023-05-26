@@ -28,7 +28,7 @@ def wait_for_etcd(
     for i in range(retries):
         try:
             status = client.status()
-            logger.debug("(wait_for_etcd): %s", status)
+            logger.debug("(wait_for_etcd): Connected (version: %s)", status.version)
             return
         except (
             etcd3.exceptions.ConnectionFailedError,

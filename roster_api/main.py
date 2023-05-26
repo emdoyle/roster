@@ -7,8 +7,8 @@ from fastapi import FastAPI
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
-from .api.state.agent import router as agent_router
-from .api.state.updates import router as updates_router
+from .api.agent import router as agent_router
+from .api.updates import router as updates_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 logger.setLevel(settings.SERVER_LOG_LEVEL)
