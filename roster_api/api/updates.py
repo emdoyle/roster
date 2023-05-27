@@ -30,11 +30,6 @@ async def events(
     event_queue = asyncio.Queue()
 
     def listener(event: ResourceEvent):
-        logger.debug(
-            "Checking event resource type: %s vs. %s",
-            event.resource_type,
-            resource_types,
-        )
         if resource_types is not None and event.resource_type not in resource_types:
             # This listener doesn't care about this event's resource type
             return
