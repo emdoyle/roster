@@ -3,7 +3,8 @@ import logging
 from typing import TYPE_CHECKING, Callable, Optional
 
 from roster_api import constants, errors
-from roster_api.events.spec import DeleteSpecEvent, PutSpecEvent, SpecEvent
+from roster_api.events.spec import DeleteResourceEvent, PutResourceEvent, ResourceEvent
+from roster_api.resources.base import resource_type_from_etcd_prefix
 from roster_api.watchers.base import BaseWatcher
 from roster_api.watchers.etcd import EtcdResourceWatcher
 
@@ -12,20 +13,20 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
-AGENT_RESOURCE_WATCHER: Optional["AgentResourceWatcher"] = None
+RESOURCE_WATCHER: Optional["ResourceWatcher"] = None
 
 
-def get_agent_resource_watcher() -> "AgentResourceWatcher":
-    global AGENT_RESOURCE_WATCHER
-    if AGENT_RESOURCE_WATCHER is not None:
-        return AGENT_RESOURCE_WATCHER
+def get_resource_watcher() -> "ResourceWatcher":
+    global RESOURCE_WATCHER
+    if RESOURCE_WATCHER is not None:
+        return RESOURCE_WATCHER
 
-    AGENT_RESOURCE_WATCHER = AgentResourceWatcher()
-    return AGENT_RESOURCE_WATCHER
+    RESOURCE_WATCHER = ResourceWatcher()
+    return RESOURCE_WATCHER
 
 
-class AgentResourceWatcher(BaseWatcher):
-    KEY_PREFIX = "/registry/agents"
+class ResourceWatcher(BaseWatcher):
+    KEY_PREFIX = "/registry"
 
     def __init__(self, listeners: Optional[list[Callable]] = None):
         self.listeners = listeners or []
@@ -34,10 +35,11 @@ class AgentResourceWatcher(BaseWatcher):
         )
 
     @classmethod
-    def _process_event(cls, event: "etcd3.events.Event") -> Optional[SpecEvent]:
+    def _process_event(cls, event: "etcd3.events.Event") -> Optional[ResourceEvent]:
         try:
             key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
-            namespace, name = key.split("/")
+            resource_prefix, namespace, name = key.split("/")
+            resource_type = resource_type_from_etcd_prefix(resource_prefix)
             if "Put" in str(event.__class__):
                 # SSE events are double-encoded
                 resource = json.loads(json.loads(event.value.decode("utf-8")))
@@ -50,47 +52,45 @@ class AgentResourceWatcher(BaseWatcher):
                         )
                     except json.JSONDecodeError as e:
                         logger.warning(
-                            "(agent) Error decoding prev_value in etcd event: %s", e
+                            "(resource) Error decoding prev_value in etcd event: %s", e
                         )
 
                 if prev_resource is not None:
                     # This is an update event
-                    if resource["spec"] != prev_resource["spec"]:
-                        return PutSpecEvent(
-                            resource_type="AGENT",
-                            namespace=namespace,
-                            name=name,
-                            spec=resource["spec"],
-                        )
-                    # No spec change, so ignore
-                    logger.debug("(agent) Ignoring event: %s", event)
-                    return None
+                    spec_changed = resource["spec"] != prev_resource["spec"]
+                    status_changed = resource["status"] != prev_resource["status"]
                 else:
                     # This is a create event
-                    return PutSpecEvent(
-                        resource_type="AGENT",
-                        namespace=namespace,
-                        name=name,
-                        spec=resource["spec"],
-                    )
+                    spec_changed = True
+                    status_changed = True
+
+                return PutResourceEvent(
+                    resource_type=resource_type,
+                    namespace=namespace,
+                    name=name,
+                    resource=resource,
+                    spec_changed=spec_changed,
+                    status_changed=status_changed,
+                )
+
             elif "Delete" in str(event.__class__):
-                return DeleteSpecEvent(
-                    resource_type="AGENT", namespace=namespace, name=name
+                return DeleteResourceEvent(
+                    resource_type=resource_type, namespace=namespace, name=name
                 )
         except Exception as e:
-            logger.debug("(agent) Error processing event: %s", e)
+            logger.debug("(resource) Error processing event: %s", e)
             raise errors.InvalidEventError(f"Invalid event: {event}") from e
 
     def _handle_event(self, event: "etcd3.events.Event"):
-        logger.debug("(agent) Received event: %s", event)
+        logger.debug("(resource) Received event: %s", event)
         try:
             event = self._process_event(event)
         except errors.InvalidEventError as e:
-            logger.warning("Failed to process agent event from etcd: %s", e)
+            logger.warning("Failed to process resource event from etcd: %s", e)
             return
         if event is None:
             return
-        logger.debug("(agent) Sending spec event: %s", event)
+        logger.debug("(resource) Sending resource event: %s", event)
         listeners = self.listeners.copy()
         for listener in listeners:
             try:
@@ -98,18 +98,18 @@ class AgentResourceWatcher(BaseWatcher):
             except errors.ListenerDisconnectedError:
                 self.listeners.remove(listener)
             except Exception as e:
-                logger.exception("(agent) Error in listener %s: %s", listener, e)
+                logger.exception("(resource) Error in listener %s: %s", listener, e)
 
     def watch(self):
         self._watcher.watch()
 
     def start(self):
         self._watcher.start()
-        logger.info("Starting agent watcher")
+        logger.info("Starting resource watcher")
 
     def stop(self):
         self._watcher.stop()
-        logger.info("Agent watcher stopped")
+        logger.info("Resource watcher stopped")
 
     def add_listener(self, listener: Callable):
         self.listeners.append(listener)

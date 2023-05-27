@@ -4,13 +4,13 @@ ACTIVE_WATCHERS: list[BaseWatcher] = []
 
 
 def setup_watchers():
-    from .agent import get_agent_resource_watcher
+    from .resource import get_resource_watcher
 
-    agent_watcher = get_agent_resource_watcher()
-    agent_watcher.start()
+    resource_watcher = get_resource_watcher()
+    resource_watcher.start()
 
     global ACTIVE_WATCHERS
-    ACTIVE_WATCHERS = [agent_watcher]
+    ACTIVE_WATCHERS = [resource_watcher]
 
 
 def teardown_watchers():
