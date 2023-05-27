@@ -1,8 +1,0 @@
-apiVersion: roster/v0.1
-kind: Role
-metadata:
-  name: backend
-
-spec:
-  description: >
-    The backend role is responsible for managing the backend.
