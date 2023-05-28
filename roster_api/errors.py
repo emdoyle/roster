@@ -43,6 +43,16 @@ class AgentNotFoundError(AgentError):
         self.agent = agent
 
 
+class AgentNotReadyError(AgentError):
+    """Exception raised when an Agent is not ready."""
+
+    def __init__(
+        self, message="The specified Agent is not ready.", details=None, agent=None
+    ):
+        super().__init__(message, details)
+        self.agent = agent
+
+
 class ListenerDisconnectedError(RosterAPIError):
     """Exception raised when a listener is disconnected."""
 

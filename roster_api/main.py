@@ -8,6 +8,7 @@ from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
 from .api.agent import router as agent_router
+from .api.commands import router as commands_router
 from .api.role import router as role_router
 from .api.team import router as team_router
 from .api.team_layout import router as team_layout_router
@@ -69,6 +70,7 @@ def get_app():
     app.include_router(team_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(team_layout_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(updates_router, prefix=f"/{constants.API_VERSION}")
+    app.include_router(commands_router, prefix=f"/{constants.API_VERSION}")
     return app
 
 

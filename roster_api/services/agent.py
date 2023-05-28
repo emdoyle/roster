@@ -1,12 +1,14 @@
 import logging
 from typing import Optional
 
+import aiohttp
 import etcd3
 import pydantic
 from roster_api import constants, errors
 from roster_api.db.etcd import get_etcd_client
 from roster_api.events.status import StatusEvent
 from roster_api.models.agent import AgentResource, AgentSpec, AgentStatus
+from roster_api.models.chat import ConversationMessage
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
@@ -64,6 +66,33 @@ class AgentService:
         if deleted:
             logger.debug(f"Deleted Agent {name}.")
         return deleted
+
+    async def chat_prompt_agent(
+        self,
+        name: str,
+        history: list[ConversationMessage],
+        message: ConversationMessage,
+        namespace: str = DEFAULT_NAMESPACE,
+    ):
+        agent = self.get_agent(name)
+        agent_host = agent.status.host_ip
+        if not agent_host:
+            raise errors.AgentNotReadyError(agent=name)
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                # TODO: https, fix host, auth, configurable port, namespace etc.
+                async with session.post(
+                    f"http://host.docker.internal:7890/v0.1/messaging/agent/{name}/chat",
+                    json={
+                        "history": [_message.dict() for _message in history],
+                        "message": message.dict(),
+                    },
+                ) as resp:
+                    return await resp.json()
+        except aiohttp.ClientError as e:
+            logger.error(e)
+            raise errors.AgentNotReadyError(agent=name) from e
 
     def _handle_agent_status_put(self, status_update: StatusEvent):
         agent_key = self._get_agent_key(status_update.name)
