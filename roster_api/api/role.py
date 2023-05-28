@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-@router.post("/roles", tags=["RoleSpec"])
+@router.post("/roles", tags=["RoleResource"])
 def create_role(role: RoleSpec):
     try:
         return RoleService().create_role(role)
@@ -18,12 +18,12 @@ def create_role(role: RoleSpec):
         raise HTTPException(status_code=409, detail=e.message)
 
 
-@router.get("/roles", tags=["RoleSpec"])
+@router.get("/roles", tags=["RoleResource"])
 def list_roles():
     return RoleService().list_roles()
 
 
-@router.get("/roles/{name}", tags=["RoleSpec"])
+@router.get("/roles/{name}", tags=["RoleResource"])
 def get_role(name: str):
     try:
         return RoleService().get_role(name)
@@ -31,7 +31,7 @@ def get_role(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/roles/{name}", tags=["RoleSpec"])
+@router.patch("/roles/{name}", tags=["RoleResource"])
 def update_role(role: RoleSpec):
     try:
         return RoleService().update_role(role)
@@ -39,7 +39,7 @@ def update_role(role: RoleSpec):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.delete("/roles/{name}", tags=["RoleSpec"])
+@router.delete("/roles/{name}", tags=["RoleResource"])
 def delete_role(name: str):
     deleted = RoleService().delete_role(name)
     if not deleted:

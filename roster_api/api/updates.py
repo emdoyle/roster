@@ -15,7 +15,7 @@ router = APIRouter()
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-@router.get("/resource-events")
+@router.get("/resource-events", tags=["Event"])
 async def events(
     request: Request,
     resource_types: Annotated[Optional[list[str]], Query()] = None,
@@ -66,7 +66,7 @@ async def events(
     return response
 
 
-@router.post("/status-update")
+@router.post("/status-update", tags=["Event"])
 async def handle_status_update(request: Request, status_update: StatusEvent):
     status_update.host_ip = request.client.host
     if status_update.resource_type == "AGENT":

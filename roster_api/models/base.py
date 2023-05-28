@@ -9,7 +9,7 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class RosterResource(BaseModel):
-    api_version: constr(regex=f"^{API_VERSION}$") = Field(
+    api_version: constr(regex="^v[0-9.]+$") = Field(
         default=API_VERSION, description="The api version."
     )
     kind: str = Field(description="The kind of resource.")

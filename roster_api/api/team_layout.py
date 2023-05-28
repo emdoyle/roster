@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-@router.post("/team-layouts", tags=["TeamLayoutSpec"])
+@router.post("/team-layouts", tags=["TeamLayoutResource"])
 def create_team_layout(team_layout: TeamLayoutSpec):
     try:
         return TeamLayoutService().create_team_layout(team_layout)
@@ -18,12 +18,12 @@ def create_team_layout(team_layout: TeamLayoutSpec):
         raise HTTPException(status_code=409, detail=e.message)
 
 
-@router.get("/team-layouts", tags=["TeamLayoutSpec"])
+@router.get("/team-layouts", tags=["TeamLayoutResource"])
 def list_team_layouts():
     return TeamLayoutService().list_team_layouts()
 
 
-@router.get("/team-layouts/{name}", tags=["TeamLayoutSpec"])
+@router.get("/team-layouts/{name}", tags=["TeamLayoutResource"])
 def get_team_layout(name: str):
     try:
         return TeamLayoutService().get_team_layout(name)
@@ -31,7 +31,7 @@ def get_team_layout(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/team-layouts/{name}", tags=["TeamLayoutSpec"])
+@router.patch("/team-layouts/{name}", tags=["TeamLayoutResource"])
 def update_team_layout(team_layout: TeamLayoutSpec):
     try:
         return TeamLayoutService().update_team_layout(team_layout)
@@ -39,7 +39,7 @@ def update_team_layout(team_layout: TeamLayoutSpec):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.delete("/team-layouts/{name}", tags=["TeamLayoutSpec"])
+@router.delete("/team-layouts/{name}", tags=["TeamLayoutResource"])
 def delete_team_layout(name: str):
     deleted = TeamLayoutService().delete_team_layout(name)
     if not deleted:

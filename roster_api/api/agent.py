@@ -10,7 +10,7 @@ router = APIRouter()
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-@router.post("/agents", tags=["AgentSpec"])
+@router.post("/agents", tags=["AgentResource"])
 def create_agent(agent: AgentSpec):
     try:
         return AgentService().create_agent(agent)
@@ -18,12 +18,12 @@ def create_agent(agent: AgentSpec):
         raise HTTPException(status_code=409, detail=e.message)
 
 
-@router.get("/agents", tags=["AgentSpec"])
+@router.get("/agents", tags=["AgentResource"])
 def list_agents():
     return AgentService().list_agents()
 
 
-@router.get("/agents/{name}", tags=["AgentSpec"])
+@router.get("/agents/{name}", tags=["AgentResource"])
 def get_agent(name: str):
     try:
         return AgentService().get_agent(name)
@@ -31,7 +31,7 @@ def get_agent(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/agents/{name}", tags=["AgentSpec"])
+@router.patch("/agents/{name}", tags=["AgentResource"])
 def update_agent(agent: AgentSpec):
     try:
         return AgentService().update_agent(agent)
@@ -39,7 +39,7 @@ def update_agent(agent: AgentSpec):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.delete("/agents/{name}", tags=["AgentSpec"])
+@router.delete("/agents/{name}", tags=["AgentResource"])
 def delete_agent(name: str):
     deleted = AgentService().delete_agent(name)
     if not deleted:
