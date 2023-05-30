@@ -7,13 +7,13 @@ from .role import RoleSpec
 class TeamLayoutSpec(BaseModel):
     name: str = Field(description="A name to identify the team layout.")
     roles: dict[str, RoleSpec] = Field(
-        default_factory=list, description="The roles of the team layout."
+        default_factory=dict, description="The roles of the team layout."
     )
     peer_groups: dict[str, list[str]] = Field(
-        default_factory=list, description="The peer groups of the team layout."
+        default_factory=dict, description="The peer groups of the team layout."
     )
     management_groups: dict[str, list[str]] = Field(
-        default_factory=list, description="The management groups of the team layout."
+        default_factory=dict, description="The management groups of the team layout."
     )
 
     class Config:
@@ -31,7 +31,7 @@ class TeamLayoutSpec(BaseModel):
                 },
                 "management_groups": {
                     "manager1": ["role1", "role2"],
-                    "manager2": ["role2", "role2"],
+                    "manager2": ["role3"],
                 },
             }
         }

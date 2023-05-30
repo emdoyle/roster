@@ -9,7 +9,7 @@ class TeamSpec(BaseModel):
     name: str = Field(description="A name to identify the team.")
     layout: TeamLayoutSpec = Field(description="The layout of the team.")
     members: dict[str, AgentSpec] = Field(
-        default_factory=list, description="The members of the team."
+        default_factory=dict, description="The members of the team."
     )
 
     class Config:
