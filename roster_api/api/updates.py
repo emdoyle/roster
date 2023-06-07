@@ -8,6 +8,7 @@ from roster_api import constants, errors
 from roster_api.events.spec import ResourceEvent
 from roster_api.events.status import StatusEvent
 from roster_api.services.agent import AgentService
+from roster_api.services.task import TaskService
 from roster_api.watchers.resource import get_resource_watcher
 
 router = APIRouter()
@@ -74,6 +75,14 @@ async def handle_status_update(request: Request, status_update: StatusEvent):
             AgentService().handle_agent_status_update(status_update=status_update)
             return {"message": "OK"}
         except errors.AgentNotFoundError as e:
+            raise HTTPException(status_code=404, detail=e.message)
+        except errors.InvalidEventError as e:
+            raise HTTPException(status_code=400, detail=e.message)
+    elif status_update.resource_type == "TASK":
+        try:
+            TaskService().handle_task_status_update(status_update=status_update)
+            return {"message": "OK"}
+        except errors.TaskNotFoundError as e:
             raise HTTPException(status_code=404, detail=e.message)
         except errors.InvalidEventError as e:
             raise HTTPException(status_code=400, detail=e.message)

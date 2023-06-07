@@ -99,13 +99,13 @@ class AgentService:
         agent_data, _ = self.etcd_client.get(agent_key)
         if not agent_data:
             raise errors.AgentNotFoundError(agent=status_update.name)
-        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
         try:
             updated_status = AgentStatus(
                 host_ip=status_update.host_ip, **status_update.status
             )
-        except (TypeError, pydantic.ValidationError) as e:
+        except pydantic.ValidationError as e:
             raise errors.InvalidEventError(event=status_update) from e
+        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
         agent_resource.status = updated_status
         self.etcd_client.put(agent_key, agent_resource.serialize())
         logger.debug("Updated Agent %s status.", status_update.name)

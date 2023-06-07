@@ -10,6 +10,7 @@ from . import constants, settings
 from .api.agent import router as agent_router
 from .api.commands import router as commands_router
 from .api.role import router as role_router
+from .api.task import router as task_router
 from .api.team import router as team_router
 from .api.team_layout import router as team_layout_router
 from .api.updates import router as updates_router
@@ -67,6 +68,7 @@ def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
     app.include_router(agent_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(role_router, prefix=f"/{constants.API_VERSION}")
+    app.include_router(task_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(team_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(team_layout_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(updates_router, prefix=f"/{constants.API_VERSION}")

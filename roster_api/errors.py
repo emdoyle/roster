@@ -53,6 +53,42 @@ class AgentNotReadyError(AgentError):
         self.agent = agent
 
 
+class TaskError(RosterAPIError):
+    """Exception raised for task-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred for the Task.",
+        details=None,
+        task=None,
+    ):
+        super().__init__(message, details)
+        self.task = task
+
+
+class TaskAlreadyExistsError(TaskError):
+    """Exception raised when a Task already exists."""
+
+    def __init__(
+        self,
+        message="An Task with the specified name already exists.",
+        details=None,
+        task=None,
+    ):
+        super().__init__(message, details)
+        self.task = task
+
+
+class TaskNotFoundError(TaskError):
+    """Exception raised when a Task is not found."""
+
+    def __init__(
+        self, message="The specified Task was not found.", details=None, task=None
+    ):
+        super().__init__(message, details)
+        self.task = task
+
+
 class ListenerDisconnectedError(RosterAPIError):
     """Exception raised when a listener is disconnected."""
 
@@ -77,6 +113,19 @@ class InvalidEventError(RosterAPIError):
     ):
         super().__init__(message, details)
         self.event = event
+
+
+class InvalidResourceError(RosterAPIError):
+    """Exception raised when an invalid resource is received."""
+
+    def __init__(
+        self,
+        message="The resource is invalid.",
+        details=None,
+        resource=None,
+    ):
+        super().__init__(message, details)
+        self.resource = resource
 
 
 class RoleError(RosterAPIError):

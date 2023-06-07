@@ -6,6 +6,7 @@ class ResourceType(Enum):
     Role = "ROLE"
     Team = "TEAM"
     TeamLayout = "TEAM_LAYOUT"
+    Task = "TASK"
 
 
 etcd_prefixes = {
@@ -13,6 +14,7 @@ etcd_prefixes = {
     ResourceType.Role: "roles",
     ResourceType.Team: "teams",
     ResourceType.TeamLayout: "team-layouts",
+    ResourceType.Task: "tasks",
 }
 resource_types_by_etcd_prefix = {v: k for k, v in etcd_prefixes.items()}
 

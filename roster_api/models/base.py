@@ -1,8 +1,9 @@
 import json
 import logging
 
+import pydantic
 from pydantic import BaseModel, Field, constr
-from roster_api import constants
+from roster_api import constants, errors
 from roster_api.constants import API_VERSION
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -25,5 +26,17 @@ class RosterResource(BaseModel):
 
     @classmethod
     def deserialize_from_etcd(cls, data: bytes) -> "RosterResource":
-        # SSE data is double-encoded
-        return cls(**json.loads(json.loads(data.decode("utf-8"))))
+        try:
+            # SSE data is double-encoded
+            return cls(**json.loads(json.loads(data.decode("utf-8"))))
+        except (
+            pydantic.ValidationError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+        ) as e:
+            logger.error(
+                "Failed to deserialize data from etcd for class: %s", cls.__name__
+            )
+            raise errors.InvalidResourceError(
+                "Could not deserialize resource from etcd."
+            ) from e
