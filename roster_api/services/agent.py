@@ -83,7 +83,7 @@ class AgentService:
             async with aiohttp.ClientSession() as session:
                 # TODO: https, fix host, auth, configurable port, namespace etc.
                 async with session.post(
-                    f"http://host.docker.internal:7890/v0.1/messaging/agent/{name}/chat",
+                    f"http://host.docker.internal:7890/v0.1/agent/{name}/chat",
                     json={
                         "history": [_message.dict() for _message in history],
                         "message": message.dict(),
