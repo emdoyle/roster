@@ -1,3 +1,5 @@
+from typing import Set
+
 from pydantic import BaseModel, Field, constr
 
 from .base import RosterResource
@@ -35,6 +37,10 @@ class TeamLayoutSpec(BaseModel):
                 },
             }
         }
+
+    @property
+    def non_manager_roles(self) -> Set[str]:
+        return self.roles.keys() - self.management_groups.keys()
 
 
 class TeamLayoutStatus(BaseModel):

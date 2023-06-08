@@ -56,6 +56,16 @@ class TaskService:
         logger.debug(f"Updated Task {task.name}.")
         return task_resource
 
+    def update_task_status(
+        self, task: TaskStatus, namespace: str = DEFAULT_NAMESPACE
+    ) -> TaskResource:
+        task_key = self._get_task_key(task.name, namespace)
+        task_resource = self.get_task(task.name, namespace)
+        task_resource.status = task
+        self.etcd_client.put(task_key, task_resource.serialize())
+        logger.debug(f"Updated Task status {task.name}.")
+        return task_resource
+
     def delete_task(self, name: str, namespace: str = DEFAULT_NAMESPACE) -> bool:
         task_key = self._get_task_key(name, namespace)
         deleted = self.etcd_client.delete(task_key)

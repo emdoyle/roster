@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from roster_api import constants, errors
-from roster_api.events.spec import ResourceEvent
+from roster_api.events.resource import ResourceEvent
 from roster_api.events.status import StatusEvent
 from roster_api.services.agent import AgentService
 from roster_api.services.task import TaskService

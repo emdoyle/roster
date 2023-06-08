@@ -35,7 +35,7 @@ class EtcdResourceWatcher(BaseWatcher):
         )
         self.cancel = cancel
         for event in events_iterator:
-            logger.debug(f"(etcd) Received event: {event}")
+            logger.debug("(etcd) Received event.")
             for listener in self.listeners:
                 try:
                     listener(event)

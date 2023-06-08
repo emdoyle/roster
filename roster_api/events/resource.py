@@ -38,8 +38,10 @@ class DeleteResourceEvent(BaseModel):
         default="DELETE", description="The type of event."
     )
     resource_type: ResourceType = Field(description="The type of resource.")
-    namespace: str = Field(default="default", description="The namespace of the agent.")
-    name: str = Field(description="The name of the agent.")
+    namespace: str = Field(
+        default="default", description="The namespace of the resource."
+    )
+    name: str = Field(description="The name of the resource.")
 
     class Config:
         use_enum_values = True

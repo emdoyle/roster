@@ -3,7 +3,11 @@ import logging
 from typing import TYPE_CHECKING, Callable, Optional
 
 from roster_api import constants, errors
-from roster_api.events.spec import DeleteResourceEvent, PutResourceEvent, ResourceEvent
+from roster_api.events.resource import (
+    DeleteResourceEvent,
+    PutResourceEvent,
+    ResourceEvent,
+)
 from roster_api.resources.base import resource_type_from_etcd_prefix
 from roster_api.watchers.base import BaseWatcher
 from roster_api.watchers.etcd import EtcdResourceWatcher
@@ -25,6 +29,7 @@ def get_resource_watcher() -> "ResourceWatcher":
     return RESOURCE_WATCHER
 
 
+# TODO: might make sense to allow filtering at the connection level
 class ResourceWatcher(BaseWatcher):
     KEY_PREFIX = "/registry"
 
@@ -79,10 +84,10 @@ class ResourceWatcher(BaseWatcher):
                 )
         except Exception as e:
             logger.debug("(resource) Error processing event: %s", e)
-            raise errors.InvalidEventError(f"Invalid event: {event}") from e
+            raise errors.InvalidEventError(event=event) from e
 
     def _handle_event(self, event: "etcd3.events.Event"):
-        logger.debug("(resource) Received event: %s", event)
+        logger.debug("(resource) Received event from etcd")
         try:
             event = self._process_event(event)
         except errors.InvalidEventError as e:

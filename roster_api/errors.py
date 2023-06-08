@@ -237,3 +237,25 @@ class TeamLayoutNotFoundError(TeamLayoutError):
     ):
         super().__init__(message, details)
         self.team_layout = team_layout
+
+
+class SetupError(RosterAPIError):
+    """Exception raised for setup-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred during setup.",
+        details=None,
+    ):
+        super().__init__(message, details)
+
+
+class TeardownError(RosterAPIError):
+    """Exception raised for teardown-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred during teardown.",
+        details=None,
+    ):
+        super().__init__(message, details)
