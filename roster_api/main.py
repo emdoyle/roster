@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
+from roster_api.controllers.task import TaskController
+from roster_api.executors.task import TaskExecutor
+from roster_api.informers.task import TaskInformer
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
@@ -46,13 +49,20 @@ def setup_logging():
     logs_enabled = True
 
 
+task_controller = TaskController(
+    task_executor=TaskExecutor(), task_informer=TaskInformer()
+)
+
+
 async def setup():
     setup_logging()
     setup_watchers()
+    await task_controller.setup()
 
 
 async def teardown():
     teardown_watchers()
+    await task_controller.teardown()
 
 
 @asynccontextmanager
