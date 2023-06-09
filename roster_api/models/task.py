@@ -15,6 +15,9 @@ class TaskSpec(BaseModel):
         default_factory=list,
         description="A list of assignment anti-affinities for the task.",
     )
+    parent: Optional["TaskSpec"] = Field(
+        default=None, description="The parent task of the task."
+    )
 
     class Config:
         validate_assignment = True
@@ -24,8 +27,17 @@ class TaskSpec(BaseModel):
                 "description": "my task",
                 "assignment_affinities": ["software engineer", "backend"],
                 "assignment_anti_affinities": ["frontend"],
+                "parent": {
+                    "name": "my_parent_task",
+                    "description": "my parent task",
+                    "assignment_affinities": ["software engineer", "backend"],
+                    "assignment_anti_affinities": ["frontend"],
+                },
             }
         }
+
+
+TaskSpec.update_forward_refs()
 
 
 class TaskAssignment(BaseModel):
@@ -50,6 +62,8 @@ class TaskStatus(BaseModel):
     assignment: Optional[TaskAssignment] = Field(
         default=None, description="Who is assigned to the task."
     )
+    result: str = Field(default="", description="The result of the task.")
+    error: str = Field(default="", description="The error of the task.")
 
     class Config:
         validate_assignment = True
@@ -58,6 +72,8 @@ class TaskStatus(BaseModel):
                 "name": "my_task",
                 "status": "running",
                 "assignment": TaskAssignment.Config.schema_extra["example"],
+                "result": "my_result",
+                "error": "",
             }
         }
 

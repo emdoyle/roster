@@ -36,15 +36,25 @@ class TaskExecutor:
         if not agent:
             raise errors.AgentNotFoundError()
 
+        assignment = TaskAssignment(
+            team_name=team.spec.name,
+            role_name=role,
+            agent_name=agent.name,
+        )
+
         # TODO: https, fix host, auth, configurable port, namespace etc.
         runtime_url = "http://host.docker.internal:7890"
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{runtime_url}/v0.1/agent/{agent.name}/tasks",
-                    json={"task": task.name, "description": task.description},
-                ) as resp:
-                    return await resp.json()
+                    json={
+                        "task": task.name,
+                        "description": task.description,
+                        "assignment": assignment.dict(),
+                    },
+                ):
+                    return assignment
         except aiohttp.ClientError as e:
             logger.error("Failed to reach Roster runtime to assign task.")
             logger.debug("(task-exec) Failed to reach Roster runtime %s", e)
