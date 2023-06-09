@@ -103,7 +103,10 @@ class ResourceWatcher(BaseWatcher):
             except errors.ListenerDisconnectedError:
                 self.listeners.remove(listener)
             except Exception as e:
-                logger.exception("(resource) Error in listener %s: %s", listener, e)
+                logger.error("Error in resource listener %s", listener.__name__)
+                logger.debug(
+                    "(resource) Error in listener %s: %s", listener.__name__, e
+                )
 
     def watch(self):
         self._watcher.watch()

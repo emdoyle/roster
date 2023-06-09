@@ -47,13 +47,17 @@ class TaskInformer(Informer[TaskResource, ResourceEvent]):
                     event.resource,
                 )
         else:
-            logger.warning("(task-inf) Unexpected resource type: %s", event)
+            logger.warning(
+                "(task-inf) Unexpected resource type: %s", event.resource_type
+            )
 
     def _handle_delete_resource_event(self, event: ResourceEvent):
         if event.resource_type == ResourceType.Task:
             self.tasks.pop(event.name, None)
         else:
-            logger.warning("(task-inf) Unexpected resource type: %s", event)
+            logger.warning(
+                "(task-inf) Unexpected resource type: %s", event.resource_type
+            )
 
     def _handle_resource_event(self, event: ResourceEvent):
         logger.debug("(task-inf) Received Resource event: %s", event)

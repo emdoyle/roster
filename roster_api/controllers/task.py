@@ -87,9 +87,20 @@ class TaskController:
         logger.info("TaskController reconciling...")
         logger.debug("(task-control) Reconciling tasks...")
         task_resources = self.task_informer.list_resources()
-        await asyncio.gather(
-            *[self._reconcile_task(task_resource) for task_resource in task_resources]
-        )
+        try:
+            await asyncio.gather(
+                *[
+                    self._reconcile_task(task_resource)
+                    for task_resource in task_resources
+                ]
+            )
+        except Exception as e:
+            logger.error("TaskController failed to reconcile tasks.")
+            logger.debug(
+                "(task-control) TaskController failed to reconcile tasks. Error: %s",
+                e,
+            )
+            return
         logger.debug("(task-control) Reconciled tasks.")
         logger.info("TaskController reconciled.")
 
@@ -109,7 +120,9 @@ class TaskController:
                     event.resource,
                 )
                 return
-            asyncio.create_task(self._reconcile_task(task=task_resource))
+            # This is running from WITHIN the ResourceWatcher,
+            # which is a separate Thread.
+            asyncio.run(self._reconcile_task(task=task_resource))
         else:
             logger.warning(
                 "TaskController received unexpected Resource event: %s", event
@@ -117,9 +130,20 @@ class TaskController:
 
     def _cancel_task(self, task_name: str, namespace: str = "default"):
         logger.debug("(task-control) Cancelling Task %s (%s)", task_name, namespace)
-        asyncio.create_task(
-            self.task_executor.cancel_task(name=task_name, namespace=namespace)
-        )
+        try:
+            # This is running from WITHIN the ResourceWatcher,
+            # which is a separate Thread.
+            asyncio.run(
+                self.task_executor.cancel_task(name=task_name, namespace=namespace)
+            )
+        except errors.RosterAPIError as e:
+            logger.error("Failed to cancel task %s", task_name)
+            logger.debug(
+                "(task-control) Failed to cancel task %s, Error: %s",
+                task_name,
+                e,
+            )
+            return
 
     def _handle_agent_deleted(self, agent_name: str, namespace: str = "default"):
         logger.debug(

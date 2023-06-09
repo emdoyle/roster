@@ -23,11 +23,10 @@ class PutResourceEvent(BaseModel):
     )
 
     class Config:
-        use_enum_values = True
         validate_assignment = True
 
     def __str__(self):
-        return f"({self.event_type} {self.resource_type} {self.namespace}/{self.name})"
+        return f"({self.event_type} {self.resource_type.value} {self.namespace}/{self.name})"
 
     def serialize(self) -> bytes:
         return json.dumps(self.json()).encode("utf-8")
@@ -44,11 +43,10 @@ class DeleteResourceEvent(BaseModel):
     name: str = Field(description="The name of the resource.")
 
     class Config:
-        use_enum_values = True
         validate_assignment = True
 
     def __str__(self):
-        return f"({self.event_type} {self.resource_type} {self.namespace}/{self.name})"
+        return f"({self.event_type} {self.resource_type.value} {self.namespace}/{self.name})"
 
     def serialize(self) -> bytes:
         return json.dumps(self.json()).encode("utf-8")
