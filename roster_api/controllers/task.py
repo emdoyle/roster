@@ -79,7 +79,7 @@ class TaskController:
             # TaskInformer cache will be updated automatically by event stream,
             # and subsequent reconciliation will be a no-op.
             self.task_service.update_task_status(
-                TaskStatus(**task.status.dict(), assignment=assignment)
+                TaskStatus(**{**task.status.dict(), "assignment": assignment})
             )
         logger.debug("(task-control) Reconciled task %s", task.spec.name)
 
@@ -166,5 +166,5 @@ class TaskController:
                 namespace,
             )
             self.task_service.update_task_status(
-                TaskStatus(**task.status.dict(), assignment=None)
+                TaskStatus(**{**task.status.dict(), "assignment": None})
             )
