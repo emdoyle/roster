@@ -53,8 +53,13 @@ class TaskExecutor:
                         "description": task.description,
                         "assignment": assignment.dict(),
                     },
+                    raise_for_status=True,
                 ):
                     return assignment
+        except aiohttp.ClientResponseError as e:
+            logger.error("Failed to assign task.")
+            logger.debug("(task-exec) Failed to assign task %s", e.message)
+            raise errors.RosterAPIError("Failed to assign task") from e
         except aiohttp.ClientError as e:
             logger.error("Failed to reach Roster runtime to assign task.")
             logger.debug("(task-exec) Failed to reach Roster runtime %s", e)
@@ -75,9 +80,14 @@ class TaskExecutor:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.delete(
-                    f"{runtime_url}/v0.1/agent/{agent_name}/tasks/{name}"
+                    f"{runtime_url}/v0.1/agent/{agent_name}/tasks/{name}",
+                    raise_for_status=True,
                 ):
                     return
+        except aiohttp.ClientResponseError as e:
+            logger.error("Failed to cancel task.")
+            logger.debug("(task-exec) Failed to cancel task %s", e.message)
+            raise errors.RosterAPIError("Failed to cancel task") from e
         except aiohttp.ClientError as e:
             logger.error("Failed to reach Roster runtime to cancel task.")
             logger.debug("(task-exec) Failed to reach Roster runtime %s", e)
