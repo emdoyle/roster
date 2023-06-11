@@ -73,6 +73,7 @@ class AgentService:
         history: list[ConversationMessage],
         message: ConversationMessage,
         namespace: str = DEFAULT_NAMESPACE,
+        team: str = "",
     ):
         agent = self.get_agent(name)
         agent_host = agent.status.host_ip
@@ -82,12 +83,15 @@ class AgentService:
         try:
             async with aiohttp.ClientSession() as session:
                 # TODO: https, fix host, auth, configurable port, namespace etc.
+                payload = {
+                    "history": [_message.dict() for _message in history],
+                    "message": message.dict(),
+                }
+                if team:
+                    payload["team"] = team
                 async with session.post(
                     f"http://host.docker.internal:7890/v0.1/agent/{name}/chat",
-                    json={
-                        "history": [_message.dict() for _message in history],
-                        "message": message.dict(),
-                    },
+                    json=payload,
                 ) as resp:
                     return await resp.json()
         except aiohttp.ClientError as e:
