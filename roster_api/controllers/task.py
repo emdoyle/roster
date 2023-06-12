@@ -18,8 +18,7 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 # - no direct connection to volatile state
 #   (state is derived from the TaskInformer cache,
 #    which comes from Roster event stream)
-#   TODO: this means Task DELETEs and otherwise orphaned Tasks
-#     can't easily be detected
+#   TODO: this means orphaned Tasks can't easily be detected
 # - shared responsibility for status updates
 #   (Agents themselves send some status updates)
 # - no reconcile loop since Tasks are independent
@@ -107,7 +106,18 @@ class TaskController:
     def _handle_resource_event(self, event: ResourceEvent):
         if event.event_type == "DELETE":
             if event.resource_type == ResourceType.Task:
-                self._cancel_task(event.name, event.namespace)
+                try:
+                    task_resource = TaskResource(**event.resource)
+                except pydantic.ValidationError:
+                    logger.error(
+                        "TaskController could not parse Task resource from event"
+                    )
+                    logger.debug(
+                        "TaskController could not parse Task resource from event: %s",
+                        event.resource,
+                    )
+                    return
+                self._handle_task_deleted(task_resource, event.namespace)
             elif event.resource_type == ResourceType.Agent:
                 self._handle_agent_deleted(event.name, event.namespace)
         elif event.event_type == "PUT" and event.resource_type == ResourceType.Task:
@@ -128,19 +138,32 @@ class TaskController:
                 "TaskController received unexpected Resource event: %s", event
             )
 
-    def _cancel_task(self, task_name: str, namespace: str = "default"):
-        logger.debug("(task-control) Cancelling Task %s (%s)", task_name, namespace)
+    def _handle_task_deleted(self, task: TaskResource, namespace: str = "default"):
+        if task.status.assignment is None:
+            logger.debug(
+                "(task-control) Task %s (%s) already unassigned, ignoring",
+                task.spec.name,
+                namespace,
+            )
+            return
+        logger.debug(
+            "(task-control) Cancelling Task %s (%s)", task.spec.name, namespace
+        )
         try:
             # This is running from WITHIN the ResourceWatcher,
             # which is a separate Thread.
             asyncio.run(
-                self.task_executor.cancel_task(name=task_name, namespace=namespace)
+                self.task_executor.cancel_task(
+                    name=task.spec.name,
+                    agent_name=task.status.assignment.agent_name,
+                    namespace=namespace,
+                )
             )
         except errors.RosterAPIError as e:
-            logger.error("Failed to cancel task %s", task_name)
+            logger.error("Failed to cancel task %s", task.spec.name)
             logger.debug(
                 "(task-control) Failed to cancel task %s, Error: %s",
-                task_name,
+                task.spec.name,
                 e,
             )
             return

@@ -45,23 +45,16 @@ class ResourceWatcher(BaseWatcher):
             key = event.key.decode()[len(cls.KEY_PREFIX) + 1 :]
             resource_prefix, namespace, name = key.split("/")
             resource_type = resource_type_from_etcd_prefix(resource_prefix)
+
             if "Put" in str(event.__class__):
                 # SSE events are double-encoded
                 resource = json.loads(json.loads(event.value.decode("utf-8")))
                 prev_value = getattr(event, "prev_value", None)
-                prev_resource = None
                 if prev_value:
-                    try:
-                        prev_resource = json.loads(
-                            json.loads(prev_value.decode("utf-8"))
-                        )
-                    except json.JSONDecodeError as e:
-                        logger.warning(
-                            "(resource) Error decoding prev_value in etcd event: %s", e
-                        )
-
-                if prev_resource is not None:
                     # This is an update event
+                    prev_resource = json.loads(
+                        json.loads(event.prev_value.decode("utf-8"))
+                    )
                     spec_changed = resource["spec"] != prev_resource["spec"]
                     status_changed = resource["status"] != prev_resource["status"]
                 else:
@@ -79,8 +72,15 @@ class ResourceWatcher(BaseWatcher):
                 )
 
             elif "Delete" in str(event.__class__):
+                logger.info(
+                    "Delete event: %s %s ; %s", event.key, event.value, event.prev_value
+                )
+                prev_resource = json.loads(json.loads(event.prev_value.decode("utf-8")))
                 return DeleteResourceEvent(
-                    resource_type=resource_type, namespace=namespace, name=name
+                    resource_type=resource_type,
+                    namespace=namespace,
+                    name=name,
+                    resource=prev_resource,
                 )
         except Exception as e:
             logger.debug("(resource) Error processing event: %s", e)

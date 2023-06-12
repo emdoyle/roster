@@ -69,13 +69,9 @@ class TaskExecutor:
             logger.debug("(task-exec) Failed to assign task %s", e)
             raise errors.RosterAPIError("Failed to assign task") from e
 
-    async def cancel_task(self, name: str, namespace: str = "default"):
-        task = self.task_service.get_task(name, namespace)
-        if task.status.assignment is None:
-            raise errors.AgentNotFoundError()
-        agent_name = task.status.assignment.agent_name
-
+    async def cancel_task(self, name: str, agent_name: str, namespace: str = "default"):
         # TODO: https, fix host, auth, configurable port, namespace etc.
+        #   not static because agent service would theoretically be needed for networking
         runtime_url = "http://host.docker.internal:7890"
         try:
             async with aiohttp.ClientSession() as session:

@@ -41,6 +41,7 @@ class DeleteResourceEvent(BaseModel):
         default="default", description="The namespace of the resource."
     )
     name: str = Field(description="The name of the resource.")
+    resource: dict = Field(description="The (deleted) resource data itself.")
 
     class Config:
         validate_assignment = True
