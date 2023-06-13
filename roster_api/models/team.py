@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, constr
+from roster_api import errors
 
 from .base import RosterResource
 
@@ -118,3 +119,9 @@ class TeamResource(RosterResource):
     @classmethod
     def initial_state(cls, spec: TeamSpec) -> "TeamResource":
         return cls(spec=spec, status=TeamStatus(name=spec.name))
+
+    def get_member(self, role: str) -> Member:
+        try:
+            return self.spec.members[role]
+        except KeyError:
+            raise errors.TeamMemberNotFoundError(member=role)

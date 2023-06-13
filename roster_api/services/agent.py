@@ -69,34 +69,37 @@ class AgentService:
 
     async def chat_prompt_agent(
         self,
-        name: str,
+        agent: str,
+        identity: str,
+        team: str,
+        role: str,
         history: list[ConversationMessage],
         message: ConversationMessage,
         namespace: str = DEFAULT_NAMESPACE,
-        team: str = "",
-    ):
-        agent = self.get_agent(name)
-        agent_host = agent.status.host_ip
+    ) -> str:
+        agent_resource = self.get_agent(agent)
+        agent_host = agent_resource.status.host_ip
         if not agent_host:
-            raise errors.AgentNotReadyError(agent=name)
+            raise errors.AgentNotReadyError(agent=agent)
 
         try:
             async with aiohttp.ClientSession() as session:
                 # TODO: https, fix host, auth, configurable port, namespace etc.
                 payload = {
+                    "identity": identity,
+                    "team": team,
+                    "role": role,
                     "history": [_message.dict() for _message in history],
                     "message": message.dict(),
                 }
-                if team:
-                    payload["team"] = team
                 async with session.post(
-                    f"http://host.docker.internal:7890/v0.1/agent/{name}/chat",
+                    f"http://host.docker.internal:7890/v0.1/agent/{agent}/chat",
                     json=payload,
                 ) as resp:
-                    return await resp.json()
+                    return await resp.text()
         except aiohttp.ClientError as e:
             logger.error(e)
-            raise errors.AgentNotReadyError(agent=name) from e
+            raise errors.AgentNotReadyError(agent=agent) from e
 
     def _handle_agent_status_put(self, status_update: StatusEvent):
         agent_key = self._get_agent_key(status_update.name)
