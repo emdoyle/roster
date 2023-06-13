@@ -36,41 +36,33 @@ class TaskInformer(Informer[TaskResource, ResourceEvent]):
         logger.debug("Tearing down Roster Informer")
         self.resource_watcher.remove_listener(self._handle_resource_event)
 
-    def _handle_put_resource_event(self, event: ResourceEvent) -> bool:
+    def _handle_put_resource_event(self, event: ResourceEvent):
         if event.resource_type == ResourceType.Task:
             try:
                 self.tasks[event.name] = TaskResource(**event.resource)
-                return True
             except pydantic.ValidationError:
                 logger.error("TaskInformer failed to parse TaskResource from event")
                 logger.debug(
                     "(task-inf) Failed to parse TaskResource from event: %s",
                     event.resource,
                 )
-                return False
         else:
             logger.debug("(task-inf) Ignoring resource type: %s", event.resource_type)
-            return False
 
-    def _handle_delete_resource_event(self, event: ResourceEvent) -> bool:
+    def _handle_delete_resource_event(self, event: ResourceEvent):
         if event.resource_type == ResourceType.Task:
             self.tasks.pop(event.name, None)
-            return True
         else:
             logger.debug("(task-inf) Ignoring resource type: %s", event.resource_type)
-            return False
 
     def _handle_resource_event(self, event: ResourceEvent):
         logger.debug("(task-inf) Received Resource event: %s", event)
         if event.event_type == "PUT":
-            handled = self._handle_put_resource_event(event)
+            self._handle_put_resource_event(event)
         elif event.event_type == "DELETE":
-            handled = self._handle_delete_resource_event(event)
+            self._handle_delete_resource_event(event)
         else:
             logger.warning("(task-inf) Unknown event: %s", event)
-            return
-        if not handled:
-            logger.debug("(task-inf) Ignoring event: %s", event)
             return
         logger.debug("(task-inf) Pushing Resource event to listeners: %s", event)
         for listener in self.event_listeners:

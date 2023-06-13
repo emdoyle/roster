@@ -10,7 +10,7 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class TeamService:
-    KEY_PREFIX = "/registry/team"
+    KEY_PREFIX = "/registry/teams"
     DEFAULT_NAMESPACE = "default"
 
     def __init__(self, etcd_client: Optional[etcd3.Etcd3Client] = None):

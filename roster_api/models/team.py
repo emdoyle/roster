@@ -1,14 +1,69 @@
 from pydantic import BaseModel, Field, constr
 
-from .agent import AgentSpec
 from .base import RosterResource
-from .team_layout import TeamLayoutSpec
+
+
+class Role(BaseModel):
+    description: str = Field(description="A description of the role.")
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "description": "A description of the role.",
+            }
+        }
+
+
+class Layout(BaseModel):
+    roles: dict[str, Role] = Field(
+        default_factory=dict, description="The roles in the layout."
+    )
+    peer_groups: dict[str, list[str]] = Field(
+        default_factory=dict, description="The peer groups in the layout."
+    )
+    management_groups: dict[str, list[str]] = Field(
+        default_factory=dict, description="The management groups in the layout."
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "roles": {
+                    "role1": Role.Config.schema_extra["example"],
+                    "role2": Role.Config.schema_extra["example"],
+                },
+                "peer_groups": {
+                    "group1": ["role1", "role2"],
+                    "group2": ["role2", "role3"],
+                },
+                "management_groups": {
+                    "manager1": ["role1", "role2"],
+                    "manager2": ["role3"],
+                },
+            }
+        }
+
+
+class Member(BaseModel):
+    identity: str = Field(description="The identity of the member.")
+    agent: str = Field(description="The agent running this member.")
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "identity": "Alice",
+                "agent": "agent1",
+            }
+        }
 
 
 class TeamSpec(BaseModel):
     name: str = Field(description="A name to identify the team.")
-    layout: TeamLayoutSpec = Field(description="The layout of the team.")
-    members: dict[str, AgentSpec] = Field(
+    layout: Layout = Field(description="The layout of the team.")
+    members: dict[str, Member] = Field(
         default_factory=dict, description="The members of the team."
     )
 
@@ -17,10 +72,10 @@ class TeamSpec(BaseModel):
         schema_extra = {
             "example": {
                 "name": "Red Team",
-                "layout": TeamLayoutSpec.Config.schema_extra["example"],
+                "layout": Layout.Config.schema_extra["example"],
                 "members": {
-                    "agent1": AgentSpec.Config.schema_extra["example"],
-                    "agent2": AgentSpec.Config.schema_extra["example"],
+                    "member1": Member.Config.schema_extra["example"],
+                    "member2": Member.Config.schema_extra["example"],
                 },
             }
         }

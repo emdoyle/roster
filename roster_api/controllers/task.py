@@ -134,9 +134,7 @@ class TaskController:
             # which is a separate Thread.
             asyncio.run(self._reconcile_task(task=task_resource))
         else:
-            logger.warning(
-                "TaskController received unexpected Resource event: %s", event
-            )
+            logger.debug("(task-control) Ignoring unexpected Resource event: %s", event)
 
     def _handle_task_deleted(self, task: TaskResource, namespace: str = "default"):
         if task.status.assignment is None:

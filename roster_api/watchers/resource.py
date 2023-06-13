@@ -72,9 +72,6 @@ class ResourceWatcher(BaseWatcher):
                 )
 
             elif "Delete" in str(event.__class__):
-                logger.info(
-                    "Delete event: %s %s ; %s", event.key, event.value, event.prev_value
-                )
                 prev_resource = json.loads(json.loads(event.prev_value.decode("utf-8")))
                 return DeleteResourceEvent(
                     resource_type=resource_type,
