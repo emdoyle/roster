@@ -3,7 +3,7 @@ from enum import Enum
 
 class ResourceType(Enum):
     Agent = "AGENT"
-    Role = "ROLE"
+    Identity = "IDENTITY"
     Team = "TEAM"
     TeamLayout = "TEAM_LAYOUT"
     Task = "TASK"
@@ -11,7 +11,7 @@ class ResourceType(Enum):
 
 etcd_prefixes = {
     ResourceType.Agent: "agents",
-    ResourceType.Role: "roles",
+    ResourceType.Identity: "identities",
     ResourceType.Team: "teams",
     ResourceType.TeamLayout: "team-layouts",
     ResourceType.Task: "tasks",

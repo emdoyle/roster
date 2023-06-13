@@ -45,6 +45,10 @@ class Layout(BaseModel):
             }
         }
 
+    @property
+    def non_manager_roles(self) -> set[str]:
+        return self.roles.keys() - self.management_groups.keys()
+
 
 class Member(BaseModel):
     identity: str = Field(description="The identity of the member.")

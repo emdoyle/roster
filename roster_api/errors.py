@@ -71,7 +71,7 @@ class TaskAlreadyExistsError(TaskError):
 
     def __init__(
         self,
-        message="An Task with the specified name already exists.",
+        message="A Task with the specified name already exists.",
         details=None,
         task=None,
     ):
@@ -128,40 +128,43 @@ class InvalidResourceError(RosterAPIError):
         self.resource = resource
 
 
-class RoleError(RosterAPIError):
-    """Exception raised for role-related errors."""
+class IdentityError(RosterAPIError):
+    """Exception raised for identity-related errors."""
 
     def __init__(
         self,
-        message="An unexpected error occurred for the Role.",
+        message="An unexpected error occurred for the Identity.",
         details=None,
-        role=None,
+        identity=None,
     ):
         super().__init__(message, details)
-        self.role = role
+        self.identity = identity
 
 
-class RoleAlreadyExistsError(RoleError):
-    """Exception raised when a Role already exists."""
+class IdentityAlreadyExistsError(IdentityError):
+    """Exception raised when an Identity already exists."""
 
     def __init__(
         self,
-        message="A Role with the specified name already exists.",
+        message="An Identity with the specified name already exists.",
         details=None,
-        role=None,
+        identity=None,
     ):
         super().__init__(message, details)
-        self.role = role
+        self.identity = identity
 
 
-class RoleNotFoundError(RoleError):
-    """Exception raised when a Role is not found."""
+class IdentityNotFoundError(IdentityError):
+    """Exception raised when an Identity is not found."""
 
     def __init__(
-        self, message="The specified Role was not found.", details=None, role=None
+        self,
+        message="The specified Identity was not found.",
+        details=None,
+        identity=None,
     ):
         super().__init__(message, details)
-        self.role = role
+        self.identity = identity
 
 
 class TeamError(RosterAPIError):
@@ -237,6 +240,32 @@ class TeamLayoutNotFoundError(TeamLayoutError):
     ):
         super().__init__(message, details)
         self.team_layout = team_layout
+
+
+class TeamRoleNotFoundError(RosterAPIError):
+    """Exception raised when a role is not found."""
+
+    def __init__(
+        self,
+        message="The specified role was not found.",
+        details=None,
+        role=None,
+    ):
+        super().__init__(message, details)
+        self.role = role
+
+
+class TeamMemberNotFoundError(RosterAPIError):
+    """Exception raised when a TeamMember is not found."""
+
+    def __init__(
+        self,
+        message="The specified member was not found.",
+        details=None,
+        member=None,
+    ):
+        super().__init__(message, details)
+        self.member = member
 
 
 class SetupError(RosterAPIError):

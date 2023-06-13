@@ -1,14 +1,12 @@
-from typing import Set
-
 from pydantic import BaseModel, Field, constr
 
 from .base import RosterResource
-from .role import RoleSpec
+from .identity import IdentitySpec
 
 
 class TeamLayoutSpec(BaseModel):
     name: str = Field(description="A name to identify the team layout.")
-    roles: dict[str, RoleSpec] = Field(
+    roles: dict[str, IdentitySpec] = Field(
         default_factory=dict, description="The roles of the team layout."
     )
     peer_groups: dict[str, list[str]] = Field(
@@ -24,8 +22,8 @@ class TeamLayoutSpec(BaseModel):
             "example": {
                 "name": "Red TeamLayout",
                 "roles": {
-                    "role1": RoleSpec.Config.schema_extra["example"],
-                    "role2": RoleSpec.Config.schema_extra["example"],
+                    "role1": IdentitySpec.Config.schema_extra["example"],
+                    "role2": IdentitySpec.Config.schema_extra["example"],
                 },
                 "peer_groups": {
                     "group1": ["role1", "role2"],
@@ -37,10 +35,6 @@ class TeamLayoutSpec(BaseModel):
                 },
             }
         }
-
-    @property
-    def non_manager_roles(self) -> Set[str]:
-        return self.roles.keys() - self.management_groups.keys()
 
 
 class TeamLayoutStatus(BaseModel):
