@@ -7,6 +7,7 @@ from fastapi.responses import StreamingResponse
 from roster_api import constants, errors
 from roster_api.events.resource import ResourceEvent
 from roster_api.events.status import StatusEvent
+from roster_api.resources.base import ResourceType
 from roster_api.services.agent import AgentService
 from roster_api.services.task import TaskService
 from roster_api.watchers.resource import get_resource_watcher
@@ -30,9 +31,17 @@ async def events(
 
     event_queue = asyncio.Queue()
 
+    try:
+        resource_types = [ResourceType(t) for t in resource_types]
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, detail="Unexpected resource_type provided."
+        )
+
     def listener(event: ResourceEvent):
         if resource_types is not None and event.resource_type not in resource_types:
             # This listener doesn't care about this event's resource type
+            logger.debug(f"Skipping event for {event.resource_type}")
             return
         if (
             event.event_type == "DELETE"
