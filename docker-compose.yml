@@ -18,10 +18,23 @@ services:
       - PYTHONUNBUFFERED=1
       - ROSTER_API_DEBUG=1
       - ROSTER_API_ETCD_HOST=Etcd
+      - ROSTER_API_POSTGRES_HOST=postgres
+      - ROSTER_API_POSTGRES_PORT=5432
+      - ROSTER_API_POSTGRES_DB=rosterdb
     volumes:
       - ./roster_api:/app/roster_api
     ports:
       - "7888:7888"
+    depends_on:
+      - Etcd
+      - Postgres
+  Postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_DB=rosterdb
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5432:5432"
   Etcd:
     image: 'bitnami/etcd:latest'
     environment:
