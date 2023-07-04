@@ -5,11 +5,13 @@ import uvicorn
 from fastapi import FastAPI
 
 from roster_api.controllers.task import TaskController
+from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.executors.task import TaskExecutor
 from roster_api.informers.task import TaskInformer
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
+from .api.activity import router as activity_router
 from .api.agent import router as agent_router
 from .api.commands import router as commands_router
 from .api.identity import router as identity_router
@@ -56,11 +58,13 @@ task_controller = TaskController(
 
 async def setup():
     setup_logging()
+    await setup_postgres()
     setup_watchers()
     await task_controller.setup()
 
 
 async def teardown():
+    await teardown_postgres()
     teardown_watchers()
     await task_controller.teardown()
 
@@ -77,6 +81,7 @@ async def lifespan(app: FastAPI):
 def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
     app.include_router(agent_router, prefix=f"/{constants.API_VERSION}")
+    app.include_router(activity_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(identity_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(task_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(team_router, prefix=f"/{constants.API_VERSION}")
