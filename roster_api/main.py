@@ -2,7 +2,7 @@ import logging.handlers
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from roster_api.controllers.task import TaskController
 from roster_api.db.postgres import setup_postgres, teardown_postgres
@@ -80,14 +80,19 @@ async def lifespan(app: FastAPI):
 
 def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
-    app.include_router(agent_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(activity_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(identity_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(task_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(team_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(team_layout_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(updates_router, prefix=f"/{constants.API_VERSION}")
-    app.include_router(commands_router, prefix=f"/{constants.API_VERSION}")
+
+    api_router = APIRouter()
+
+    api_router.include_router(agent_router)
+    api_router.include_router(activity_router)
+    api_router.include_router(identity_router)
+    api_router.include_router(task_router)
+    api_router.include_router(team_router)
+    api_router.include_router(team_layout_router)
+    api_router.include_router(updates_router)
+    api_router.include_router(commands_router, prefix="/commands")
+
+    app.include_router(api_router, prefix=f"/{constants.API_VERSION}")
     return app
 
 

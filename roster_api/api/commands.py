@@ -11,7 +11,7 @@ router = APIRouter()
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-@router.post("/commands/agent-chat", tags=["AgentResource", "Command"])
+@router.post("/agent-chat", tags=["AgentResource", "Command"])
 async def chat_prompt_agent(prompt: ChatPromptAgentArgs) -> ConversationMessage:
     try:
         team = TeamService().get_team(prompt.team)
