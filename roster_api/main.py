@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from roster_api.controllers.task import TaskController
 from roster_api.db.postgres import setup_postgres, teardown_postgres
@@ -80,6 +81,13 @@ async def lifespan(app: FastAPI):
 
 def get_app():
     app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allows all origins
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
+    )
 
     api_router = APIRouter()
 
