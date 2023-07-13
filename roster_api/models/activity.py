@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class ExecutionType(Enum):
-    CHAT = "chat"
     TASK = "task"
 
 
@@ -48,7 +47,7 @@ class ActivityEvent(BaseModel):
         schema_extra = {
             "example": {
                 "execution_id": "execution-1",
-                "execution_type": "chat",
+                "execution_type": "task",
                 "type": "thought",
                 "content": "Hello, world!",
                 "agent_context": AgentContext.Config.schema_extra["example"],

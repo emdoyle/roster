@@ -5,6 +5,7 @@ import aiohttp
 import etcd3
 import pydantic
 from roster_api import constants, errors
+from roster_api.constants import EXECUTION_ID_HEADER, EXECUTION_TYPE_HEADER
 from roster_api.db.etcd import get_etcd_client
 from roster_api.events.status import StatusEvent
 from roster_api.models.agent import AgentResource, AgentSpec, AgentStatus
@@ -75,6 +76,8 @@ class AgentService:
         role: str,
         history: list[ConversationMessage],
         message: ConversationMessage,
+        execution_id: str = "",
+        execution_type: str = "",
         namespace: str = DEFAULT_NAMESPACE,
     ) -> str:
         agent_resource = self.get_agent(agent)
@@ -83,6 +86,11 @@ class AgentService:
             raise errors.AgentNotReadyError(agent=agent)
 
         try:
+            headers = {}
+            if execution_id:
+                headers[EXECUTION_ID_HEADER] = execution_id
+            if execution_type:
+                headers[EXECUTION_TYPE_HEADER] = execution_type
             async with aiohttp.ClientSession() as session:
                 # TODO: https, fix host, auth, configurable port, namespace etc.
                 payload = {
@@ -95,6 +103,7 @@ class AgentService:
                 async with session.post(
                     f"http://host.docker.internal:7890/v0.1/agent/{agent}/chat",
                     json=payload,
+                    headers=headers,
                 ) as resp:
                     return await resp.text()
         except aiohttp.ClientError as e:

@@ -1,7 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from roster_api import constants, errors
+from roster_api.constants import EXECUTION_ID_HEADER, EXECUTION_TYPE_HEADER
 from roster_api.models.chat import ChatPromptAgentArgs, ConversationMessage
 from roster_api.services.agent import AgentService
 from roster_api.services.team import TeamService
@@ -12,7 +13,12 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 @router.post("/agent-chat", tags=["AgentResource", "Command"])
-async def chat_prompt_agent(prompt: ChatPromptAgentArgs) -> ConversationMessage:
+async def chat_prompt_agent(
+    request: Request, prompt: ChatPromptAgentArgs
+) -> ConversationMessage:
+    execution_id = request.headers.get(EXECUTION_ID_HEADER, "")
+    execution_type = request.headers.get(EXECUTION_TYPE_HEADER, "")
+
     try:
         team = TeamService().get_team(prompt.team)
         team_member = team.get_member(prompt.role)
@@ -23,6 +29,8 @@ async def chat_prompt_agent(prompt: ChatPromptAgentArgs) -> ConversationMessage:
             role=prompt.role,
             history=prompt.history,
             message=prompt.message,
+            execution_id=execution_id,
+            execution_type=execution_type,
         )
         return ConversationMessage(
             sender=team_member.identity,

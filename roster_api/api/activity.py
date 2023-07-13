@@ -26,6 +26,9 @@ async def create_activity(
     return True
 
 
+# This retrieves all stored activities matching the filters.
+# Streaming is not implemented because listen/notify is unnecessary for an MVP.
+# The client will be responsible for polling/dedupe by ID.
 @router.get("/activities", tags=["ActivityEvent"])
 async def read_activities(
     execution_id: str,
