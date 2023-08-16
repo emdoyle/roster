@@ -1,0 +1,24 @@
+{
+  "name": "ProductManager",
+  "image": ".local/roster-product-manager",
+  "tag": "latest",
+  "apiVersion": "v1",
+  "actions": [
+    {
+      "name": "DistillFeatureRequirements",
+      "description": "Turns an unstructured ",
+      "inputs": [
+        {
+          "type": "text",
+          "name": "customer_requests"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "text",
+          "name": "requirements_document"
+        }
+      ]
+    }
+  ]
+}

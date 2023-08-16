@@ -1,0 +1,38 @@
+{
+  "name": "WebDeveloper",
+  "image": ".local/roster-web-developer",
+  "tag": "latest",
+  "apiVersion": "v1",
+  "actions": [
+    {
+      "name": "WriteCode",
+      "inputs": [
+        {
+          "type": "text",
+          "name": "requirements_document"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "code",
+          "name": "code"
+        }
+      ]
+    },
+    {
+      "name": "CreatePullRequest",
+      "inputs": [
+        {
+          "type": "code",
+          "name": "code"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "github_pr",
+          "name": "pull_request"
+        }
+      ]
+    }
+  ]
+}
