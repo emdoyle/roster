@@ -6,6 +6,7 @@
   "actions": [
     {
       "name": "WriteCode",
+      "description": "Write code to implement a feature based on a requirements document",
       "inputs": [
         {
           "type": "text",
@@ -21,6 +22,7 @@
     },
     {
       "name": "CreatePullRequest",
+      "description": "Create a Github pull request for a branch of code",
       "inputs": [
         {
           "type": "code",

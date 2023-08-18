@@ -6,6 +6,7 @@
   "actions": [
     {
       "name": "DistillFeatureRequirements",
+      "description": "Turns unstructured customer requirements into a structured requirements document",
       "inputs": [
         {
           "type": "text",

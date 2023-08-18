@@ -2,53 +2,38 @@ from pydantic import BaseModel, Field, constr
 from roster_api import errors
 
 from .base import RosterResource
+from .common import TypedArgument
 
 
 class Role(BaseModel):
+    name: str = Field(description="A name to identify the role.")
     description: str = Field(description="A description of the role.")
 
     class Config:
         validate_assignment = True
         schema_extra = {
             "example": {
+                "name": "RoleName",
                 "description": "A description of the role.",
             }
         }
 
 
 class Layout(BaseModel):
-    roles: dict[str, Role] = Field(
-        default_factory=dict, description="The roles in the layout."
-    )
-    peer_groups: dict[str, list[str]] = Field(
-        default_factory=dict, description="The peer groups in the layout."
-    )
-    management_groups: dict[str, list[str]] = Field(
-        default_factory=dict, description="The management groups in the layout."
+    roles: list[Role] = Field(
+        default_factory=list, description="The roles in the layout."
     )
 
     class Config:
         validate_assignment = True
         schema_extra = {
             "example": {
-                "roles": {
-                    "role1": Role.Config.schema_extra["example"],
-                    "role2": Role.Config.schema_extra["example"],
-                },
-                "peer_groups": {
-                    "group1": ["role1", "role2"],
-                    "group2": ["role2", "role3"],
-                },
-                "management_groups": {
-                    "manager1": ["role1", "role2"],
-                    "manager2": ["role3"],
-                },
+                "roles": [
+                    Role.Config.schema_extra["example"],
+                    Role.Config.schema_extra["example"],
+                ]
             }
         }
-
-    @property
-    def non_manager_roles(self) -> set[str]:
-        return self.roles.keys() - self.management_groups.keys()
 
 
 class Member(BaseModel):
@@ -65,9 +50,58 @@ class Member(BaseModel):
         }
 
 
+class Workflow(BaseModel):
+    name: str = Field(description="A name to identify the workflow.")
+    inputs: list[TypedArgument] = Field(
+        default_factory=list, description="The inputs to the workflow."
+    )
+    outputs: list[TypedArgument] = Field(
+        default_factory=list, description="The outputs of the workflow."
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "name": "WorkflowName",
+                "inputs": [
+                    TypedArgument.Config.schema_extra["example"],
+                    TypedArgument.Config.schema_extra["example"],
+                ],
+                "outputs": [
+                    TypedArgument.Config.schema_extra["example"],
+                    TypedArgument.Config.schema_extra["example"],
+                ],
+            }
+        }
+
+
 class TeamSpec(BaseModel):
     name: str = Field(description="A name to identify the team.")
+    type: str = Field(description="The type of the team.")
+    description: str = Field(
+        description="A description of the team and its capabilities."
+    )
     layout: Layout = Field(description="The layout of the team.")
+    workflows: list[Workflow] = Field(
+        default_factory=list, description="The workflows which the team implements."
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "name": "Red Team",
+                "type": "red",
+                "description": "A description of the team and its capabilities.",
+                "layout": Layout.Config.schema_extra["example"],
+            }
+        }
+
+
+class TeamStatus(BaseModel):
+    name: str = Field(description="A name to identify the team.")
+    status: str = Field(default="active", description="The status of the team.")
     members: dict[str, Member] = Field(
         default_factory=dict, description="The members of the team."
     )
@@ -77,25 +111,11 @@ class TeamSpec(BaseModel):
         schema_extra = {
             "example": {
                 "name": "Red Team",
-                "layout": Layout.Config.schema_extra["example"],
+                "status": "active",
                 "members": {
                     "member1": Member.Config.schema_extra["example"],
                     "member2": Member.Config.schema_extra["example"],
                 },
-            }
-        }
-
-
-class TeamStatus(BaseModel):
-    name: str = Field(description="A name to identify the team.")
-    status: str = Field(default="active", description="The status of the team.")
-
-    class Config:
-        validate_assignment = True
-        schema_extra = {
-            "example": {
-                "name": "Red Team",
-                "status": "active",
             }
         }
 
@@ -122,6 +142,6 @@ class TeamResource(RosterResource):
 
     def get_member(self, role: str) -> Member:
         try:
-            return self.spec.members[role]
+            return self.status.members[role]
         except KeyError:
             raise errors.TeamMemberNotFoundError(member=role)
