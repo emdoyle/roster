@@ -203,45 +203,6 @@ class TeamNotFoundError(TeamError):
         self.team = team
 
 
-class TeamLayoutError(RosterAPIError):
-    """Exception raised for team-related errors."""
-
-    def __init__(
-        self,
-        message="An unexpected error occurred for the TeamLayout.",
-        details=None,
-        team_layout=None,
-    ):
-        super().__init__(message, details)
-        self.team_layout = team_layout
-
-
-class TeamLayoutAlreadyExistsError(TeamLayoutError):
-    """Exception raised when a TeamLayout already exists."""
-
-    def __init__(
-        self,
-        message="A TeamLayout with the specified name already exists.",
-        details=None,
-        team_layout=None,
-    ):
-        super().__init__(message, details)
-        self.team_layout = team_layout
-
-
-class TeamLayoutNotFoundError(TeamLayoutError):
-    """Exception raised when a TeamLayout is not found."""
-
-    def __init__(
-        self,
-        message="The specified TeamLayout was not found.",
-        details=None,
-        team_layout=None,
-    ):
-        super().__init__(message, details)
-        self.team_layout = team_layout
-
-
 class TeamRoleNotFoundError(RosterAPIError):
     """Exception raised when a role is not found."""
 

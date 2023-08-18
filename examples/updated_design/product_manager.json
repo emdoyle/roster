@@ -6,7 +6,6 @@
   "actions": [
     {
       "name": "DistillFeatureRequirements",
-      "description": "Turns an unstructured ",
       "inputs": [
         {
           "type": "text",

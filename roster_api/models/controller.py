@@ -5,7 +5,7 @@ from .task import TaskResource, TaskSpec, TaskStatus
 
 # Not using this right now,
 # but it is necessary for TaskController
-# once it actually watches volatile TaskStatus(
+# once it actually watches volatile TaskStatus
 class TaskControllerStore(BaseModel):
     desired: list[TaskSpec] = Field(
         default_factory=list,

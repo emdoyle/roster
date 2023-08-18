@@ -18,7 +18,6 @@ from .api.commands import router as commands_router
 from .api.identity import router as identity_router
 from .api.task import router as task_router
 from .api.team import router as team_router
-from .api.team_layout import router as team_layout_router
 from .api.updates import router as updates_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -96,7 +95,6 @@ def get_app():
     api_router.include_router(identity_router)
     api_router.include_router(task_router)
     api_router.include_router(team_router)
-    api_router.include_router(team_layout_router)
     api_router.include_router(updates_router)
     api_router.include_router(commands_router, prefix="/commands")
 
