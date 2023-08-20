@@ -24,6 +24,10 @@ class TeamService:
     ) -> TeamResource:
         team_key = self._get_team_key(team.name, namespace)
         team_resource = TeamResource.initial_state(spec=team)
+        logger.debug(
+            "Assuming members are accurately specified for Team %s.", team.name
+        )
+        team_resource.status.members = team_resource.spec.members
         created = self.etcd_client.put_if_not_exists(
             team_key, team_resource.serialize()
         )
@@ -50,6 +54,10 @@ class TeamService:
         team_key = self._get_team_key(team.name, namespace)
         team_resource = self.get_team(team.name, namespace)
         team_resource.spec = team
+        logger.debug(
+            "Assuming members are accurately specified for Team %s.", team.name
+        )
+        team_resource.status.members = team_resource.spec.members
         self.etcd_client.put(team_key, team_resource.serialize())
         logger.debug(f"Updated Team {team.name}.")
         return team_resource
