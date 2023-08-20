@@ -50,5 +50,15 @@
         }
       ]
     }
-  ]
+  ],
+  "members": {
+    "ProductManager": {
+      "identity": "charlie",
+      "agent": "langchain-structured-tools"
+    },
+    "WebDeveloper": {
+      "identity": "david",
+      "agent": "langchain-structured-tools"
+    }
+  }
 }

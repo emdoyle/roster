@@ -49,7 +49,7 @@ class AgentSpec(BaseModel):
         schema_extra = {
             "example": {
                 "name": "Alice",
-                "image": "roster/agent",
+                "image": ".local/agent",
                 "tag": "latest",
                 "actions": [
                     Action.Config.schema_extra["example"],

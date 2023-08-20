@@ -86,6 +86,9 @@ class TeamSpec(BaseModel):
     workflows: list[Workflow] = Field(
         default_factory=list, description="The workflows which the team implements."
     )
+    members: dict[str, Member] = Field(
+        default_factory=dict, description="The members of the team."
+    )
 
     class Config:
         validate_assignment = True
@@ -95,6 +98,10 @@ class TeamSpec(BaseModel):
                 "type": "red",
                 "description": "A description of the team and its capabilities.",
                 "layout": Layout.Config.schema_extra["example"],
+                "members": {
+                    "member1": Member.Config.schema_extra["example"],
+                    "member2": Member.Config.schema_extra["example"],
+                },
             }
         }
 
