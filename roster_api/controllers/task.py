@@ -26,15 +26,15 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 class TaskController:
     def __init__(
         self,
-        task_executor: TaskExecutor,
-        task_informer: TaskInformer,
+        task_executor: TaskExecutor = None,
+        task_informer: TaskInformer = None,
         task_service: Optional[TaskService] = None,
     ):
         # TaskExecutor is used to issue commands during reconciliation
-        self.task_executor = task_executor
+        self.task_executor = task_executor or TaskExecutor()
         # TaskInformer maintains a local cache of Task resources
         #   and emits events on relevant Task, Agent resource changes
-        self.task_informer = task_informer
+        self.task_informer = task_informer or TaskInformer()
         # TaskService only used for pushing status changes to etcd
         #   analogous to RosterNotifier
         self.task_service = task_service or TaskService()
@@ -132,6 +132,7 @@ class TaskController:
                 return
             # This is running from WITHIN the ResourceWatcher,
             # which is a separate Thread.
+            # TODO: patch this leak within TaskInformer
             asyncio.run(self._reconcile_task(task=task_resource))
         else:
             logger.debug("(task-control) Ignoring unexpected Resource event: %s", event)
@@ -150,6 +151,7 @@ class TaskController:
         try:
             # This is running from WITHIN the ResourceWatcher,
             # which is a separate Thread.
+            # TODO: patch this leak within TaskInformer
             asyncio.run(
                 self.task_executor.cancel_task(
                     name=task.spec.name,

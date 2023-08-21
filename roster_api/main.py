@@ -8,9 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from roster_api.controllers.task import TaskController
 from roster_api.db.postgres import setup_postgres, teardown_postgres
-from roster_api.executors.task import TaskExecutor
-from roster_api.informers.task import TaskInformer
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
+from roster_api.messaging.workflow import WorkflowRouter
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
@@ -53,9 +52,8 @@ def setup_logging():
     logs_enabled = True
 
 
-task_controller = TaskController(
-    task_executor=TaskExecutor(), task_informer=TaskInformer()
-)
+task_controller = TaskController()
+workflow_router = WorkflowRouter()
 
 
 async def setup():
@@ -64,13 +62,13 @@ async def setup():
     # NOTE: etcd uses a separate Thread due to blocking I/O
     #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
-    await task_controller.setup()
+    await asyncio.gather(task_controller.setup(), workflow_router.setup())
 
 
 async def teardown():
     await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
     teardown_watchers()
-    await task_controller.teardown()
+    await asyncio.gather(task_controller.teardown(), workflow_router.teardown())
 
 
 @asynccontextmanager

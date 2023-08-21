@@ -47,5 +47,5 @@ services:
   Rabbitmq:
     image: "rabbitmq:management"
     ports:
-      - "15672:15672" # Management UI
-      - "5672:5672"   # Default RabbitMQ port
+      - "15672:15672"
+      - "5672:5672"
