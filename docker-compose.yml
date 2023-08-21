@@ -2,7 +2,7 @@ version: '2'
 
 services:
   roster-api:
-    image: 'roster-ai/roster-api:latest'
+    build: '.'
     command:
       - "poetry"
       - "run"
@@ -18,9 +18,10 @@ services:
       - PYTHONUNBUFFERED=1
       - ROSTER_API_DEBUG=1
       - ROSTER_API_ETCD_HOST=Etcd
-      - ROSTER_API_POSTGRES_HOST=postgres
+      - ROSTER_API_POSTGRES_HOST=Postgres
       - ROSTER_API_POSTGRES_PORT=5432
       - ROSTER_API_POSTGRES_DB=rosterdb
+      - ROSTER_API_RABBITMQ_HOST=Rabbitmq
     volumes:
       - ./roster_api:/app/roster_api
     ports:

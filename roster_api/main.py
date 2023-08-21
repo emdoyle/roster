@@ -1,3 +1,4 @@
+import asyncio
 import logging.handlers
 from contextlib import asynccontextmanager
 
@@ -9,6 +10,7 @@ from roster_api.controllers.task import TaskController
 from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.executors.task import TaskExecutor
 from roster_api.informers.task import TaskInformer
+from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
@@ -58,13 +60,15 @@ task_controller = TaskController(
 
 async def setup():
     setup_logging()
-    await setup_postgres()
+    await asyncio.gather(setup_postgres(), setup_rabbitmq())
+    # NOTE: etcd uses a separate Thread due to blocking I/O
+    #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
     await task_controller.setup()
 
 
 async def teardown():
-    await teardown_postgres()
+    await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
     teardown_watchers()
     await task_controller.teardown()
 

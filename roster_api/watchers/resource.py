@@ -120,4 +120,5 @@ class ResourceWatcher(BaseWatcher):
         self.listeners.append(listener)
 
     def remove_listener(self, listener: Callable):
-        self.listeners.remove(listener)
+        if listener in self.listeners:
+            self.listeners.remove(listener)
