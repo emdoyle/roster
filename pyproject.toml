@@ -11,6 +11,7 @@ authors = ["Evan Doyle <evanmdoyle@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 etcd3 = "^0.12.0"
+pika = "^1.3.2"
 asyncpg = "^0.27.0"
 protobuf = "==3.20.3"
 fastapi = "^0.95.1"
