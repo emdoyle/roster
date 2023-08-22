@@ -18,6 +18,7 @@ from .api.commands import router as commands_router
 from .api.identity import router as identity_router
 from .api.team import router as team_router
 from .api.updates import router as updates_router
+from .api.workflow import router as workflow_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 logger.setLevel(settings.SERVER_LOG_LEVEL)
@@ -50,7 +51,7 @@ def setup_logging():
     logs_enabled = True
 
 
-workflow_router = WorkflowRouter()
+workflow_message_router = WorkflowRouter()
 
 
 async def setup():
@@ -60,12 +61,12 @@ async def setup():
     #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
     # Other high-level controllers, actors setup here
-    await asyncio.gather(workflow_router.setup())
+    await asyncio.gather(workflow_message_router.setup())
 
 
 async def teardown():
     # Other high-level controllers, actors teardown here
-    await asyncio.gather(workflow_router.teardown())
+    await asyncio.gather(workflow_message_router.teardown())
     teardown_watchers()
     await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
 
@@ -96,6 +97,7 @@ def get_app():
     api_router.include_router(identity_router)
     api_router.include_router(team_router)
     api_router.include_router(updates_router)
+    api_router.include_router(workflow_router)
     api_router.include_router(commands_router, prefix="/commands")
 
     app.include_router(api_router, prefix=f"/{constants.API_VERSION}")
