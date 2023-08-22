@@ -53,6 +53,58 @@ class AgentNotReadyError(AgentError):
         self.agent = agent
 
 
+class WorkflowError(RosterAPIError):
+    """Exception raised for workflow-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred for the Workflow.",
+        details=None,
+        workflow=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+
+
+class WorkflowAlreadyExistsError(WorkflowError):
+    """Exception raised when a Workflow already exists."""
+
+    def __init__(
+        self,
+        message="An Workflow with the specified name already exists.",
+        details=None,
+        workflow=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+
+
+class WorkflowNotFoundError(WorkflowError):
+    """Exception raised when a Workflow is not found."""
+
+    def __init__(
+        self,
+        message="The specified Workflow was not found.",
+        details=None,
+        workflow=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+
+
+class WorkflowNotReadyError(WorkflowError):
+    """Exception raised when a Workflow is not ready."""
+
+    def __init__(
+        self,
+        message="The specified Workflow is not ready.",
+        details=None,
+        workflow=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+
+
 class ListenerDisconnectedError(RosterAPIError):
     """Exception raised when a listener is disconnected."""
 
