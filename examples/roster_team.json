@@ -1,0 +1,28 @@
+{
+  "name": "Roster",
+  "type": "web-software",
+  "apiVersion": "v1",
+  "description": "A team of specialists who collaborate to produce web application software.",
+  "layout": {
+    "roles": [
+      {
+        "name": "ProductManager",
+        "description": "A careful thinker who understands their market and customers deeply."
+      },
+      {
+        "name": "WebDeveloper",
+        "description": "An expert in web application development who develops comprehensive, scalable solutions up and down the stack."
+      }
+    ]
+  },
+  "members": {
+    "ProductManager": {
+      "identity": "charlie",
+      "agent": "roster-product-manager"
+    },
+    "WebDeveloper": {
+      "identity": "david",
+      "agent": "roster-web-developer"
+    }
+  }
+}

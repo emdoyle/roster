@@ -1,9 +1,29 @@
 {
-  "name": "WebDeveloper",
+  "name": "roster-web-developer",
   "image": ".local/roster-web-developer",
   "tag": "latest",
   "apiVersion": "v1",
   "actions": [
+    {
+      "name": "DiagnoseBug",
+      "description": "Perform a root-cause analysis of a bug based on a description and context.",
+      "inputs": [
+        {
+          "type": "text",
+          "name": "bug_description"
+        },
+        {
+          "type": "text",
+          "name": "error_context"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "text",
+          "name": "bug_diagnosis"
+        }
+      ]
+    },
     {
       "name": "WriteCode",
       "description": "Write code to implement a feature based on a requirements document",

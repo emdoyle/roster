@@ -1,0 +1,44 @@
+{
+  "name": "ImplementFeature",
+  "apiVersion": "v1",
+  "description": "Implement a feature based on customer requirements.",
+  "team": "Roster",
+  "inputs": [
+    {
+      "type": "text",
+      "name": "feature_description"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "github_pr",
+      "name": "feature_pull_request"
+    }
+  ],
+  "actions": {
+    "PRD": {
+      "role": "ProductManager",
+      "action": "DistillFeatureRequirements",
+      "inputMap": {
+        "customer_requests": "workflow.feature_description"
+      }
+    },
+    "Code": {
+      "role": "WebDeveloper",
+      "action": "WriteCode",
+      "inputMap": {
+        "requirements_document": "PRD.requirements_document"
+      }
+    },
+    "GitPR": {
+      "role": "WebDeveloper",
+      "action": "WriteCode",
+      "inputMap": {
+        "code": "Code.code"
+      },
+      "outputMap": {
+        "pull_request": "workflow.feature_pull_request"
+      }
+    }
+  }
+}

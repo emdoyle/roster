@@ -1,0 +1,49 @@
+{
+  "name": "FixBug",
+  "apiVersion": "v1",
+  "description": "Diagnose and fix a bug.",
+  "team": "Roster",
+  "inputs": [
+    {
+      "type": "text",
+      "name": "bug_description"
+    },
+    {
+      "type": "text",
+      "name": "error_context"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "github_pr",
+      "name": "bugfix_pull_request"
+    }
+  ],
+  "actions": {
+    "Diagnosis": {
+      "role": "WebDeveloper",
+      "action": "DiagnoseBug",
+      "inputMap": {
+        "bug_description": "workflow.bug_description",
+        "error_context": "workflow.error_context"
+      }
+    },
+    "Code": {
+      "role": "WebDeveloper",
+      "action": "WriteCode",
+      "inputMap": {
+        "requirements_document": "Diagnosis.bug_diagnosis"
+      }
+    },
+    "GitPR": {
+      "role": "WebDeveloper",
+      "action": "WriteCode",
+      "inputMap": {
+        "code": "Code.code"
+      },
+      "outputMap": {
+        "pull_request": "workflow.feature_pull_request"
+      }
+    }
+  }
+}
