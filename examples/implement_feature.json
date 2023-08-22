@@ -32,7 +32,7 @@
     },
     "GitPR": {
       "role": "WebDeveloper",
-      "action": "WriteCode",
+      "action": "CreatePullRequest",
       "inputMap": {
         "code": "Code.code"
       },
