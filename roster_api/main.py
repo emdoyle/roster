@@ -6,7 +6,6 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from roster_api.controllers.task import TaskController
 from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
 from roster_api.messaging.workflow import WorkflowRouter
@@ -17,7 +16,6 @@ from .api.activity import router as activity_router
 from .api.agent import router as agent_router
 from .api.commands import router as commands_router
 from .api.identity import router as identity_router
-from .api.task import router as task_router
 from .api.team import router as team_router
 from .api.updates import router as updates_router
 
@@ -52,7 +50,6 @@ def setup_logging():
     logs_enabled = True
 
 
-task_controller = TaskController()
 workflow_router = WorkflowRouter()
 
 
@@ -62,11 +59,13 @@ async def setup():
     # NOTE: etcd uses a separate Thread due to blocking I/O
     #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
-    await asyncio.gather(task_controller.setup(), workflow_router.setup())
+    # Other high-level controllers, actors setup here
+    await asyncio.gather(workflow_router.setup())
 
 
 async def teardown():
-    await asyncio.gather(task_controller.teardown(), workflow_router.teardown())
+    # Other high-level controllers, actors teardown here
+    await asyncio.gather(workflow_router.teardown())
     teardown_watchers()
     await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
 
@@ -95,7 +94,6 @@ def get_app():
     api_router.include_router(agent_router)
     api_router.include_router(activity_router)
     api_router.include_router(identity_router)
-    api_router.include_router(task_router)
     api_router.include_router(team_router)
     api_router.include_router(updates_router)
     api_router.include_router(commands_router, prefix="/commands")

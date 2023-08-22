@@ -2,6 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+# TODO: Rework entire activity stream
+
 
 class ExecutionType(Enum):
     TASK = "task"
