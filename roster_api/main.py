@@ -66,9 +66,9 @@ async def setup():
 
 
 async def teardown():
-    await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
-    teardown_watchers()
     await asyncio.gather(task_controller.teardown(), workflow_router.teardown())
+    teardown_watchers()
+    await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
 
 
 @asynccontextmanager

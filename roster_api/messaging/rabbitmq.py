@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from aio_pika import IncomingMessage, Message, connect
+from aio_pika.abc import AbstractQueue
 from roster_api import constants, errors, settings
 from roster_api.util.async_helpers import make_async
 
@@ -94,11 +95,6 @@ class RabbitMQClient:
         if not asyncio.iscoroutinefunction(callback):
             callback = make_async(callback)
 
-        # Append the callback to the queue's list.
-        if queue_name not in self.callbacks:
-            self.callbacks[queue_name] = []
-        self.callbacks[queue_name].append(callback)
-
         # Register the callback.
         # NOTE: Callbacks must accept single string argument (decoded message body).
         if queue_name not in self.callbacks:
@@ -107,12 +103,15 @@ class RabbitMQClient:
 
         # If a consumer hasn't been set up for this queue yet, set it up.
         if queue_name not in self.active_queues:
-            consumer_tag = await self._setup_queue_consumer(queue_name)
-            self.active_queues[queue_name] = consumer_tag
+            consumer_tag, queue = await self._setup_queue_consumer(queue_name)
+            self.active_queues[queue_name] = (consumer_tag, queue)
 
-    async def _setup_queue_consumer(self, queue_name: str) -> str:
+    async def _setup_queue_consumer(
+        self, queue_name: str
+    ) -> tuple[str, "AbstractQueue"]:
         queue = await self.channel.declare_queue(queue_name)
-        return await queue.consume(self._create_message_handler(queue_name))
+        consumer_tag = await queue.consume(self._create_message_handler(queue_name))
+        return consumer_tag, queue
 
     def _create_message_handler(self, queue_name: str):
         async def handle_message(message: IncomingMessage):
@@ -132,6 +131,6 @@ class RabbitMQClient:
 
         # If it's the last callback for the queue, stop consuming from the queue.
         if not self.callbacks.get(queue_name):  # No more callbacks for this queue.
-            consumer_tag = self.active_queues.pop(queue_name, None)
+            consumer_tag, queue = self.active_queues.pop(queue_name, None)
             if consumer_tag:
-                await self.channel.cancel(consumer_tag)
+                await queue.cancel(consumer_tag)
