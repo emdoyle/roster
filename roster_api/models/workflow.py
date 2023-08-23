@@ -203,6 +203,7 @@ class WorkflowMessage(BaseModel):
         return payload_cls.parse_obj(self.data)
 
 
+# Need to store enough metadata to figure out whether an action has already been run/needs to run
 class WorkflowRecord(BaseModel):
     id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),

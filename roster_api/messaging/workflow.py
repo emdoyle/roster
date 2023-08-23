@@ -67,6 +67,12 @@ class WorkflowRouter:
 
         workflow_resource = WorkflowService().get_workflow(message.workflow)
         workflow_spec = workflow_resource.spec
+        # NOTE: The logic below is not specific to initiating the workflow
+        #   but needs to be changed slightly if used after action output reporting
+        #   problem is that actions will continue getting triggered once their dependencies
+        #   are ready, since they stay in the context
+        #   workflow record probably needs metadata on the actions to determine if they
+        #   need to run again
         for _, action_details in workflow_spec.actions.items():
             # If all dependencies are satisfied, trigger the action
             if all(
