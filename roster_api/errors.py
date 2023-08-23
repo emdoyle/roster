@@ -71,7 +71,7 @@ class WorkflowAlreadyExistsError(WorkflowError):
 
     def __init__(
         self,
-        message="An Workflow with the specified name already exists.",
+        message="A Workflow with the specified name already exists.",
         details=None,
         workflow=None,
     ):
@@ -103,6 +103,51 @@ class WorkflowNotReadyError(WorkflowError):
     ):
         super().__init__(message, details)
         self.workflow = workflow
+
+
+class WorkflowRecordError(RosterAPIError):
+    """Exception raised for WorkflowRecord-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred for the WorkflowRecord.",
+        details=None,
+        workflow=None,
+        record=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+        self.record = record
+
+
+class WorkflowRecordAlreadyExistsError(WorkflowRecordError):
+    """Exception raised when a WorkflowRecord already exists."""
+
+    def __init__(
+        self,
+        message="A WorkflowRecord with the specified name already exists.",
+        details=None,
+        workflow=None,
+        record=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+        self.record = record
+
+
+class WorkflowRecordNotFoundError(WorkflowRecordError):
+    """Exception raised when a WorkflowRecord is not found."""
+
+    def __init__(
+        self,
+        message="The specified WorkflowRecord was not found.",
+        details=None,
+        workflow=None,
+        record=None,
+    ):
+        super().__init__(message, details)
+        self.workflow = workflow
+        self.record = record
 
 
 class ListenerDisconnectedError(RosterAPIError):

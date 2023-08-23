@@ -4,8 +4,10 @@ from fastapi import APIRouter, HTTPException, Request
 from roster_api import constants, errors
 from roster_api.constants import EXECUTION_ID_HEADER, EXECUTION_TYPE_HEADER
 from roster_api.models.chat import ChatPromptAgentArgs, ConversationMessage
+from roster_api.models.workflow import InitiateWorkflowArgs
 from roster_api.services.agent import AgentService
 from roster_api.services.team import TeamService
+from roster_api.services.workflow import WorkflowService
 
 router = APIRouter()
 
@@ -46,3 +48,20 @@ async def chat_prompt_agent(
     except errors.AgentNotReadyError as e:
         logger.error(e.message)
         raise HTTPException(status_code=404, detail=e.message)
+
+
+@router.post("/initiate-workflow", tags=["WorkflowResource", "Command"])
+async def initiate_workflow(args: InitiateWorkflowArgs):
+    try:
+        return await WorkflowService().initiate_workflow(
+            workflow_name=args.workflow, inputs=args.inputs
+        )
+    except errors.WorkflowNotFoundError as e:
+        logger.error(e.message)
+        raise HTTPException(status_code=404, detail=e.message)
+    except errors.WorkflowNotReadyError as e:
+        logger.error(e.message)
+        raise HTTPException(status_code=404, detail=e.message)
+    except errors.RosterAPIError as e:
+        logger.error(e.message)
+        raise HTTPException(status_code=500, detail=e.message)
