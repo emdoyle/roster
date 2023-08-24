@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from typing import ClassVar
 
 import pydantic
 from pydantic import BaseModel, Field, constr
@@ -97,6 +98,15 @@ class WorkflowStatus(BaseModel):
     name: str = Field(description="A name to identify the workflow.")
     status: str = Field(description="The status of the workflow.")
 
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "name": "WorkflowName",
+                "status": "healthy",
+            }
+        }
+
 
 class WorkflowResource(RosterResource):
     kind: constr(regex="^Workflow$") = Field(
@@ -136,7 +146,7 @@ class InitiateWorkflowArgs(BaseModel):
 
 
 class InitiateWorkflowPayload(BaseModel):
-    KEY = "initiate_workflow"
+    KEY: ClassVar[str] = "initiate_workflow"
     inputs: dict[str, str] = Field(description="The inputs to the workflow.")
 
     class Config:
@@ -149,7 +159,7 @@ class InitiateWorkflowPayload(BaseModel):
 
 
 class WorkflowActionReportPayload(BaseModel):
-    KEY = "report_action"
+    KEY: ClassVar[str] = "report_action"
     action: str = Field(
         description="The name of the Action reporting outputs in this payload."
     )
@@ -173,7 +183,7 @@ class WorkflowActionReportPayload(BaseModel):
 
 
 class WorkflowActionTriggerPayload(BaseModel):
-    KEY = "trigger_action"
+    KEY: ClassVar[str] = "trigger_action"
     action: str = Field(
         description="The name of the Action reporting outputs in this payload."
     )
