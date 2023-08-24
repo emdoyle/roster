@@ -96,7 +96,7 @@ class WorkflowSpec(BaseModel):
 
 class WorkflowStatus(BaseModel):
     name: str = Field(description="A name to identify the workflow.")
-    status: str = Field(description="The status of the workflow.")
+    status: str = Field(default="pending", description="The status of the workflow.")
 
     class Config:
         validate_assignment = True
