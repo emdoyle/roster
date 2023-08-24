@@ -11,9 +11,25 @@ from roster_api.models.common import TypedArgument
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
+class ActionRunConfig(BaseModel):
+    num_retries: int = Field(
+        default=0,
+        description="The number of times to retry the action if it fails.",
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "num_retries": 3,
+            }
+        }
+
+
 class WorkflowAction(BaseModel):
     role: str = Field(description="The role that executes the action.")
     action: str = Field(description="The action to execute.")
+    # TODO: field should be camelcase in JSON, but snakecase in Python
     inputMap: dict[str, str] = Field(
         default_factory=dict,
         description="Maps action inputs to available workflow values.",
@@ -21,6 +37,10 @@ class WorkflowAction(BaseModel):
     outputMap: dict[str, str] = Field(
         default_factory=dict,
         description="Maps action outputs to workflow outputs. Only necessary for final actions.",
+    )
+    runConfig: ActionRunConfig = Field(
+        default_factory=ActionRunConfig,
+        description="The run configuration for the action.",
     )
 
     class Config:
@@ -31,6 +51,7 @@ class WorkflowAction(BaseModel):
                 "action": "CreatePullRequest",
                 "inputMap": {"code": "Code.code"},
                 "outputMap": {"pull_request": "workflow.feature_pull_request"},
+                "runConfig": ActionRunConfig.Config.schema_extra["example"],
             }
         }
 
@@ -133,7 +154,11 @@ class WorkflowActionReportPayload(BaseModel):
         description="The name of the Action reporting outputs in this payload."
     )
     outputs: dict[str, str] = Field(
-        description="The outputs of the Action being reported."
+        default_factory=dict, description="The outputs of the Action being reported."
+    )
+    error: str = Field(
+        default="",
+        description="An error message if the Action failed to execute.",
     )
 
     class Config:
@@ -142,6 +167,7 @@ class WorkflowActionReportPayload(BaseModel):
             "example": {
                 "action": "ActionName",
                 "outputs": {"output1": "value1", "output2": "value2"},
+                "error": "",
             }
         }
 
@@ -176,7 +202,9 @@ MESSAGE_PAYLOADS_BY_KIND = {
 
 
 class WorkflowMessage(BaseModel):
-    id: str = Field(description="An identifier for the execution of the workflow.")
+    id: str = Field(
+        description="An identifier for the workflow record this message refers to."
+    )
     workflow: str = Field(description="The workflow this message refers to.")
     kind: str = Field(description="The kind of the message data.")
     data: dict = Field(default_factory=dict, description="The data of the message.")
@@ -203,7 +231,49 @@ class WorkflowMessage(BaseModel):
         return payload_cls.parse_obj(self.data)
 
 
-# Need to store enough metadata to figure out whether an action has already been run/needs to run
+class ActionResult(BaseModel):
+    outputs: dict[str, str] = Field(
+        default_factory=dict,
+        description="The outputs of the action run.",
+    )
+    error: str = Field(
+        default="",
+        description="An error message if the action failed to execute.",
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "outputs": {"output1": "value1", "output2": "value2"},
+                "error": "",
+            }
+        }
+
+
+class ActionRunStatus(BaseModel):
+    runs: int = Field(
+        default=0,
+        description="The number of times the action has been run.",
+    )
+    results: list[ActionResult] = Field(
+        default_factory=list,
+        description="The results of the action runs.",
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "runs": 0,
+                "results": [
+                    ActionResult.Config.schema_extra["example"],
+                    ActionResult.Config.schema_extra["example"],
+                ],
+            }
+        }
+
+
 class WorkflowRecord(BaseModel):
     id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
@@ -214,6 +284,10 @@ class WorkflowRecord(BaseModel):
         default_factory=dict,
         description="The context (available values) of the workflow.",
     )
+    run_status: dict[str, ActionRunStatus] = Field(
+        default_factory=dict,
+        description="The run status of the actions in the workflow.",
+    )
 
     class Config:
         validate_assignment = True
@@ -222,6 +296,9 @@ class WorkflowRecord(BaseModel):
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "WorkflowName",
                 "context": {"input1": "value1", "input2": "value2"},
+                "run_status": {
+                    "ActionName": ActionRunStatus.Config.schema_extra["example"],
+                },
             }
         }
 

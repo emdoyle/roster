@@ -7,9 +7,15 @@ from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.messaging.inbox import AgentInbox
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
 from roster_api.models.workflow import (
+    ActionResult,
+    ActionRunStatus,
     InitiateWorkflowPayload,
+    WorkflowAction,
+    WorkflowActionReportPayload,
     WorkflowActionTriggerPayload,
     WorkflowMessage,
+    WorkflowRecord,
+    WorkflowSpec,
 )
 from roster_api.services.workflow import WorkflowRecordService, WorkflowService
 
@@ -48,6 +54,27 @@ class WorkflowRouter:
         logger.debug("(workflow-router) Received workflow message: %s", message)
         if message.kind == InitiateWorkflowPayload.KEY:
             await self._handle_initiate_workflow(message, payload)
+        elif message.kind == WorkflowActionReportPayload.KEY:
+            await self._handle_action_report(message, payload)
+
+    async def _trigger_action(
+        self,
+        workflow_spec: WorkflowSpec,
+        workflow_record: WorkflowRecord,
+        action_details: WorkflowAction,
+    ):
+        # Map workflow context to action inputs
+        trigger_payload = WorkflowActionTriggerPayload(
+            action=action_details.action,
+            inputs={
+                k: workflow_record.context[v]
+                for k, v in action_details.inputMap.items()
+            },
+        )
+        # Trigger the action by sending a message to the agent's inbox
+        await AgentInbox.from_role(
+            workflow_spec.team, action_details.role, rmq_client=self.rmq
+        ).trigger_action(workflow_spec.name, workflow_record.id, trigger_payload)
 
     async def _handle_initiate_workflow(
         self, message: WorkflowMessage, payload: InitiateWorkflowPayload
@@ -67,12 +94,7 @@ class WorkflowRouter:
 
         workflow_resource = WorkflowService().get_workflow(message.workflow)
         workflow_spec = workflow_resource.spec
-        # NOTE: The logic below is not specific to initiating the workflow
-        #   but needs to be changed slightly if used after action output reporting
-        #   problem is that actions will continue getting triggered once their dependencies
-        #   are ready, since they stay in the context
-        #   workflow record probably needs metadata on the actions to determine if they
-        #   need to run again
+
         for _, action_details in workflow_spec.actions.items():
             # If all dependencies are satisfied, trigger the action
             if all(
@@ -81,15 +103,96 @@ class WorkflowRouter:
                     for dep in action_details.inputMap.values()
                 ]
             ):
-                # Map workflow context to action inputs
-                trigger_payload = WorkflowActionTriggerPayload(
-                    action=action_details.action,
-                    inputs={
-                        k: workflow_record.context[v]
-                        for k, v in action_details.inputMap.items()
-                    },
+                await self._trigger_action(
+                    workflow_spec=workflow_spec,
+                    workflow_record=workflow_record,
+                    action_details=action_details,
                 )
-                # Trigger the action by sending a message to the agent's inbox
-                await AgentInbox.from_role(
-                    workflow_spec.team, action_details.role, rmq_client=self.rmq
-                ).trigger_action(message.workflow, workflow_record.id, trigger_payload)
+
+    async def _handle_action_report(
+        self, message: WorkflowMessage, payload: WorkflowActionReportPayload
+    ):
+        try:
+            workflow_record = WorkflowRecordService().get_workflow_record(
+                message.workflow, message.id
+            )
+        except errors.WorkflowRecordNotFoundError:
+            logger.debug("(workflow-router) Workflow record not found")
+            logger.warning(
+                "Tried to handle action report %s for workflow %s / %s, but record not found",
+                payload.action,
+                message.workflow,
+                message.id,
+            )
+            return
+
+        try:
+            workflow_resource = WorkflowService().get_workflow(message.workflow)
+        except errors.WorkflowNotFoundError:
+            logger.debug("(workflow-router) Workflow not found")
+            logger.warning(
+                "Tried to handle action report %s for workflow %s / %s, but workflow not found",
+                payload.action,
+                message.workflow,
+                message.id,
+            )
+            return
+        workflow_spec = workflow_resource.spec
+        # Store the action's outputs in the workflow record's context
+        workflow_record.context.update(payload.outputs)
+        # Update the action's run status in the workflow record
+        run_status = workflow_record.run_status.get(payload.action, ActionRunStatus())
+        run_status.runs += 1
+        run_status.results.append(
+            ActionResult(outputs=payload.outputs, error=payload.error)
+        )
+        workflow_record.run_status[payload.action] = run_status
+        # Update the workflow record in etcd
+        try:
+            WorkflowRecordService().update_workflow_record(workflow_record)
+        except errors.WorkflowRecordNotFoundError:
+            logger.debug("(workflow-router) Workflow record not found")
+            logger.warning(
+                "Tried to update workflow record %s / %s, but record not found",
+                message.workflow,
+                message.id,
+            )
+            return
+
+        # Trigger the appropriate action messages
+        for _, action_details in workflow_spec.actions.items():
+            dependencies_satisfied = all(
+                [
+                    dep in workflow_record.context
+                    for dep in action_details.inputMap.values()
+                ]
+            )
+            if not dependencies_satisfied:
+                continue
+
+            action_run_config = action_details.runConfig
+            action_run_status = workflow_record.run_status.get(
+                action_details.action, ActionRunStatus()
+            )
+            action_failed = (
+                action_run_status.results and action_run_status.results[-1].error
+            )
+
+            if action_run_status.runs == 0:
+                # If the action hasn't been triggered yet, trigger it
+                await self._trigger_action(
+                    workflow_spec=workflow_spec,
+                    workflow_record=workflow_record,
+                    action_details=action_details,
+                )
+            elif (
+                action_failed
+                and action_run_config.num_retries >= action_run_status.runs
+            ):
+                # If the action errored, and we haven't reached the max number of retries,
+                # trigger the action again
+                await self._trigger_action(
+                    workflow_spec=workflow_spec,
+                    workflow_record=workflow_record,
+                    action_details=action_details,
+                )
