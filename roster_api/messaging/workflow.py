@@ -22,6 +22,12 @@ from roster_api.services.workflow import WorkflowRecordService, WorkflowService
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
+def _workflow_inputs_are_valid(workflow_spec: WorkflowSpec, payload_inputs: dict):
+    return all(
+        (required_input in payload_inputs for required_input in workflow_spec.inputs)
+    )
+
+
 class WorkflowRouter:
     def __init__(self, rmq_client: Optional[RabbitMQClient] = None):
         self.rmq: RabbitMQClient = rmq_client or get_rabbitmq()
@@ -94,6 +100,16 @@ class WorkflowRouter:
 
         workflow_resource = WorkflowService().get_workflow(message.workflow)
         workflow_spec = workflow_resource.spec
+
+        # Validate inputs match workflow spec inputs
+        if not _workflow_inputs_are_valid(workflow_spec, payload.inputs):
+            logger.debug("(workflow-router) Invalid inputs")
+            logger.warning(
+                "Tried to initiate workflow %s with inputs %s, but inputs are invalid",
+                message.workflow,
+                payload.inputs,
+            )
+            return
 
         for _, action_details in workflow_spec.actions.items():
             # If all dependencies are satisfied, trigger the action

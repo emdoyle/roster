@@ -88,9 +88,9 @@ class WorkflowService:
             WORKFLOW_ROUTER_QUEUE,
             {
                 "id": str(uuid.uuid4()),
-                "workflow": workflow,
+                "workflow": workflow.spec.name,
                 "kind": "initiate_workflow",
-                "data": inputs,
+                "data": {"inputs": inputs},
             },
         )
 
