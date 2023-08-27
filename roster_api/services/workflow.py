@@ -7,7 +7,8 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.db.etcd import get_etcd_client
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
-from roster_api.models.workflow import WorkflowRecord, WorkflowResource, WorkflowSpec
+from roster_api.models.workflow import (WorkflowRecord, WorkflowResource,
+                                        WorkflowSpec)
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
@@ -117,10 +118,15 @@ class WorkflowRecordService:
     def create_workflow_record(
         self,
         workflow_name: str,
-        context: Optional[dict] = None,
+        inputs: Optional[dict] = None,
         namespace: str = DEFAULT_NAMESPACE,
     ) -> WorkflowRecord:
-        workflow_record = WorkflowRecord(name=workflow_name, context=context or {})
+        # NOTE: implied that inputs are validated, might want to move that here
+        context = {
+            f"workflow.{input_key}": input_value
+            for input_key, input_value in inputs.items()
+        }
+        workflow_record = WorkflowRecord(name=workflow_name, context=context)
         record_key = self._get_record_key(
             workflow_name, workflow_record.id, namespace=namespace
         )

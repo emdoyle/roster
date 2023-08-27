@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 
-from roster_api import errors
+from roster_api import constants, errors
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
 from roster_api.models.workflow import WorkflowActionTriggerPayload, WorkflowMessage
 from roster_api.services.team import TeamService
+
+logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class AgentInbox:
@@ -40,5 +43,8 @@ class AgentInbox:
             workflow=workflow_name,
             kind=WorkflowActionTriggerPayload.KEY,
             data=payload.dict(),
+        )
+        logger.debug(
+            "(agent-inbox) Publishing to queue %s: %s", self.queue_name, message.json()
         )
         await self.rmq_client.publish_json(self.queue_name, message.dict())

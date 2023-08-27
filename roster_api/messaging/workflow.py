@@ -6,17 +6,13 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.messaging.inbox import AgentInbox
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
-from roster_api.models.workflow import (
-    ActionResult,
-    ActionRunStatus,
-    InitiateWorkflowPayload,
-    WorkflowAction,
-    WorkflowActionReportPayload,
-    WorkflowActionTriggerPayload,
-    WorkflowMessage,
-    WorkflowRecord,
-    WorkflowSpec,
-)
+from roster_api.models.workflow import (ActionResult, ActionRunStatus,
+                                        InitiateWorkflowPayload,
+                                        WorkflowAction,
+                                        WorkflowActionReportPayload,
+                                        WorkflowActionTriggerPayload,
+                                        WorkflowMessage, WorkflowRecord,
+                                        WorkflowSpec)
 from roster_api.services.workflow import WorkflowRecordService, WorkflowService
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -24,7 +20,10 @@ logger = logging.getLogger(constants.LOGGER_NAME)
 
 def _workflow_inputs_are_valid(workflow_spec: WorkflowSpec, payload_inputs: dict):
     return all(
-        (required_input in payload_inputs for required_input in workflow_spec.inputs)
+        (
+            required_input.name in payload_inputs
+            for required_input in workflow_spec.inputs
+        )
     )
 
 
@@ -119,6 +118,9 @@ class WorkflowRouter:
                     for dep in action_details.inputMap.values()
                 ]
             ):
+                logger.debug(
+                    "(workflow-router) Triggering action %s", action_details.action
+                )
                 await self._trigger_action(
                     workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
@@ -155,7 +157,11 @@ class WorkflowRouter:
             return
         workflow_spec = workflow_resource.spec
         # Store the action's outputs in the workflow record's context
-        workflow_record.context.update(payload.outputs)
+        action_outputs = {
+            f"{payload.action}.{output_key}": output_value
+            for output_key, output_value in payload.outputs.items()
+        }
+        workflow_record.context.update(action_outputs)
         # Update the action's run status in the workflow record
         run_status = workflow_record.run_status.get(payload.action, ActionRunStatus())
         run_status.runs += 1
