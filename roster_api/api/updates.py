@@ -49,6 +49,9 @@ async def events(
         ):
             # This listener cares about this event's changes
             event_queue.put_nowait(event.serialize() + b"\n\n")
+        else:
+            # This listener doesn't care about this event's changes
+            logger.debug(f"Skipping event: {event}")
 
     async def event_stream():
         try:

@@ -35,6 +35,7 @@ class Action(BaseModel):
 
 class AgentSpec(BaseModel):
     name: str = Field(description="A name to identify the agent.")
+    executor: str = Field(description="The executor which should run the agent.")
     image: str = Field(description="A path to the image to be used for this agent.")
     tag: str = Field(
         description="A tag to identify the version of the image to be used for this agent.",
@@ -49,6 +50,7 @@ class AgentSpec(BaseModel):
         schema_extra = {
             "example": {
                 "name": "Alice",
+                "executor": "local",
                 "image": ".local/agent",
                 "tag": "latest",
                 "actions": [
@@ -87,6 +89,7 @@ class AgentContainer(BaseModel):
 
 class AgentStatus(BaseModel):
     name: str = Field(description="The name of the agent.")
+    executor: str = Field(description="The executor which is managing the agent.")
     status: str = Field(default="pending", description="The status of the agent.")
     host_ip: str = Field(
         default="", description="The ip address of the host running the agent."
@@ -100,6 +103,7 @@ class AgentStatus(BaseModel):
         schema_extra = {
             "example": {
                 "name": "Alice",
+                "executor": "local",
                 "status": "running",
                 "host_ip": "127.0.0.1",
                 "container": AgentContainer.Config.schema_extra["example"],
@@ -125,4 +129,6 @@ class AgentResource(RosterResource):
 
     @classmethod
     def initial_state(cls, spec: AgentSpec) -> "AgentResource":
-        return cls(spec=spec, status=AgentStatus(name=spec.name))
+        return cls(
+            spec=spec, status=AgentStatus(name=spec.name, executor=spec.executor)
+        )
