@@ -1,7 +1,7 @@
 {
   "name": "roster-web-developer",
-  "image": ".local/roster-web-developer",
-  "tag": "latest",
+  "executor": "local",
+  "image": "web_developer",
   "apiVersion": "v1",
   "actions": [
     {

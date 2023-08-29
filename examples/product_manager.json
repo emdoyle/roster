@@ -1,7 +1,7 @@
 {
   "name": "roster-product-manager",
-  "image": ".local/roster-product-manager",
-  "tag": "latest",
+  "executor": "local",
+  "image": "product_manager",
   "apiVersion": "v1",
   "actions": [
     {
