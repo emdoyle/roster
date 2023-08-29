@@ -6,13 +6,18 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.messaging.inbox import AgentInbox
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
-from roster_api.models.workflow import (ActionResult, ActionRunStatus,
-                                        InitiateWorkflowPayload,
-                                        WorkflowAction,
-                                        WorkflowActionReportPayload,
-                                        WorkflowActionTriggerPayload,
-                                        WorkflowMessage, WorkflowRecord,
-                                        WorkflowSpec)
+from roster_api.models.workflow import (
+    ActionResult,
+    ActionRunStatus,
+    InitiateWorkflowPayload,
+    WorkflowAction,
+    WorkflowActionReportPayload,
+    WorkflowActionTriggerPayload,
+    WorkflowMessage,
+    WorkflowRecord,
+    WorkflowSpec,
+)
+from roster_api.services.team import TeamService
 from roster_api.services.workflow import WorkflowRecordService, WorkflowService
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -68,6 +73,21 @@ class WorkflowRouter:
         workflow_record: WorkflowRecord,
         action_details: WorkflowAction,
     ):
+        # Retrieve the TeamResource associated with this Workflow
+        # WARNING: default namespace
+        try:
+            team_resource = TeamService().get_team(workflow_spec.team)
+        except errors.TeamNotFoundError:
+            logger.debug("(workflow-router) Team not found")
+            logger.warning(
+                "Tried to trigger action %s for workflow %s / %s, but team %s not found",
+                action_details.action,
+                workflow_spec.name,
+                workflow_record.id,
+                workflow_spec.team,
+            )
+            return
+
         # Map workflow context to action inputs
         trigger_payload = WorkflowActionTriggerPayload(
             action=action_details.action,
@@ -75,6 +95,7 @@ class WorkflowRouter:
                 k: workflow_record.context[v]
                 for k, v in action_details.inputMap.items()
             },
+            role_context=team_resource.get_role_description(action_details.role),
         )
         # Trigger the action by sending a message to the agent's inbox
         await AgentInbox.from_role(

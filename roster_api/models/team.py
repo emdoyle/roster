@@ -147,6 +147,18 @@ class TeamResource(RosterResource):
     def initial_state(cls, spec: TeamSpec) -> "TeamResource":
         return cls(spec=spec, status=TeamStatus(name=spec.name))
 
+    def get_role_description(self, role: str) -> str:
+        try:
+            return next(
+                (
+                    spec_role.description
+                    for spec_role in self.spec.layout.roles
+                    if spec_role.name == role
+                )
+            )
+        except StopIteration:
+            raise errors.TeamRoleNotFoundError(role=role)
+
     def get_member(self, role: str) -> Member:
         try:
             return self.status.members[role]
