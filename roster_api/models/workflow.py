@@ -12,10 +12,10 @@ from roster_api.models.common import TypedArgument
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
-class ActionRunConfig(BaseModel):
+class StepRunConfig(BaseModel):
     num_retries: int = Field(
         default=0,
-        description="The number of times to retry the action if it fails.",
+        description="The number of times to retry the Step if it fails.",
     )
 
     class Config:
@@ -27,7 +27,7 @@ class ActionRunConfig(BaseModel):
         }
 
 
-class WorkflowAction(BaseModel):
+class WorkflowStep(BaseModel):
     role: str = Field(description="The role that executes the action.")
     action: str = Field(description="The action to execute.")
     # TODO: field should be camelcase in JSON, but snakecase in Python
@@ -39,8 +39,8 @@ class WorkflowAction(BaseModel):
         default_factory=dict,
         description="Maps action outputs to workflow outputs. Only necessary for final actions.",
     )
-    runConfig: ActionRunConfig = Field(
-        default_factory=ActionRunConfig,
+    runConfig: StepRunConfig = Field(
+        default_factory=StepRunConfig,
         description="The run configuration for the action.",
     )
 
@@ -52,7 +52,7 @@ class WorkflowAction(BaseModel):
                 "action": "CreatePullRequest",
                 "inputMap": {"code": "Code.code"},
                 "outputMap": {"pull_request": "workflow.feature_pull_request"},
-                "runConfig": ActionRunConfig.Config.schema_extra["example"],
+                "runConfig": StepRunConfig.Config.schema_extra["example"],
             }
         }
 
@@ -67,8 +67,8 @@ class WorkflowSpec(BaseModel):
     outputs: list[TypedArgument] = Field(
         default_factory=list, description="The outputs of the workflow."
     )
-    actions: dict[str, WorkflowAction] = Field(
-        default_factory=dict, description="The actions of the workflow."
+    steps: dict[str, WorkflowStep] = Field(
+        default_factory=dict, description="The steps in the workflow."
     )
 
     class Config:
@@ -86,9 +86,9 @@ class WorkflowSpec(BaseModel):
                     TypedArgument.Config.schema_extra["example"],
                     TypedArgument.Config.schema_extra["example"],
                 ],
-                "actions": {
-                    "action1": WorkflowAction.Config.schema_extra["example"],
-                    "action2": WorkflowAction.Config.schema_extra["example"],
+                "steps": {
+                    "step1": WorkflowStep.Config.schema_extra["example"],
+                    "step2": WorkflowStep.Config.schema_extra["example"],
                 },
             }
         }
@@ -160,9 +160,10 @@ class InitiateWorkflowPayload(BaseModel):
 
 class WorkflowActionReportPayload(BaseModel):
     KEY: ClassVar[str] = "report_action"
-    action: str = Field(
-        description="The name of the Action reporting outputs in this payload."
+    step: str = Field(
+        description="The name of the Step reporting outputs in this payload."
     )
+    action: str = Field(description="The name of the Action which was run.")
     outputs: dict[str, str] = Field(
         default_factory=dict, description="The outputs of the Action being reported."
     )
@@ -175,6 +176,7 @@ class WorkflowActionReportPayload(BaseModel):
         validate_assignment = True
         schema_extra = {
             "example": {
+                "step": "StepName",
                 "action": "ActionName",
                 "outputs": {"output1": "value1", "output2": "value2"},
                 "error": "",
@@ -184,9 +186,10 @@ class WorkflowActionReportPayload(BaseModel):
 
 class WorkflowActionTriggerPayload(BaseModel):
     KEY: ClassVar[str] = "trigger_action"
-    action: str = Field(
-        description="The name of the Action reporting outputs in this payload."
+    step: str = Field(
+        description="The name of the Step reporting outputs in this payload."
     )
+    action: str = Field(description="The name of the Action being triggered.")
     inputs: dict[str, str] = Field(
         description="The inputs for the Action being triggered."
     )
@@ -198,6 +201,7 @@ class WorkflowActionTriggerPayload(BaseModel):
         validate_assignment = True
         schema_extra = {
             "example": {
+                "step": "StepName",
                 "action": "ActionName",
                 "inputs": {"input1": "value1", "input2": "value2"},
                 "role_context": "A description of the role",
@@ -245,7 +249,7 @@ class WorkflowMessage(BaseModel):
         return payload_cls.parse_obj(self.data)
 
 
-class ActionResult(BaseModel):
+class StepResult(BaseModel):
     outputs: dict[str, str] = Field(
         default_factory=dict,
         description="The outputs of the action run.",
@@ -265,14 +269,14 @@ class ActionResult(BaseModel):
         }
 
 
-class ActionRunStatus(BaseModel):
+class StepRunStatus(BaseModel):
     runs: int = Field(
         default=0,
-        description="The number of times the action has been run.",
+        description="The number of times the step has been run.",
     )
-    results: list[ActionResult] = Field(
+    results: list[StepResult] = Field(
         default_factory=list,
-        description="The results of the action runs.",
+        description="The results of the runs.",
     )
 
     class Config:
@@ -281,8 +285,8 @@ class ActionRunStatus(BaseModel):
             "example": {
                 "runs": 0,
                 "results": [
-                    ActionResult.Config.schema_extra["example"],
-                    ActionResult.Config.schema_extra["example"],
+                    StepResult.Config.schema_extra["example"],
+                    StepResult.Config.schema_extra["example"],
                 ],
             }
         }
@@ -298,7 +302,7 @@ class WorkflowRecord(BaseModel):
         default_factory=dict,
         description="The context (available values) of the workflow.",
     )
-    run_status: dict[str, ActionRunStatus] = Field(
+    run_status: dict[str, StepRunStatus] = Field(
         default_factory=dict,
         description="The run status of the actions in the workflow.",
     )
@@ -311,7 +315,7 @@ class WorkflowRecord(BaseModel):
                 "name": "WorkflowName",
                 "context": {"input1": "value1", "input2": "value2"},
                 "run_status": {
-                    "ActionName": ActionRunStatus.Config.schema_extra["example"],
+                    "ActionName": StepRunStatus.Config.schema_extra["example"],
                 },
             }
         }

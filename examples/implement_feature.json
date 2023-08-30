@@ -15,7 +15,7 @@
       "name": "feature_pull_request"
     }
   ],
-  "actions": {
+  "steps": {
     "PRD": {
       "role": "ProductManager",
       "action": "DistillFeatureRequirements",

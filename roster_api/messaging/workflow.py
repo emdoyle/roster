@@ -7,15 +7,15 @@ from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.messaging.inbox import AgentInbox
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
 from roster_api.models.workflow import (
-    ActionResult,
-    ActionRunStatus,
     InitiateWorkflowPayload,
-    WorkflowAction,
+    StepResult,
+    StepRunStatus,
     WorkflowActionReportPayload,
     WorkflowActionTriggerPayload,
     WorkflowMessage,
     WorkflowRecord,
     WorkflowSpec,
+    WorkflowStep,
 )
 from roster_api.services.team import TeamService
 from roster_api.services.workflow import WorkflowRecordService, WorkflowService
@@ -71,7 +71,8 @@ class WorkflowRouter:
         self,
         workflow_spec: WorkflowSpec,
         workflow_record: WorkflowRecord,
-        action_details: WorkflowAction,
+        step: str,
+        step_details: WorkflowStep,
     ):
         # Retrieve the TeamResource associated with this Workflow
         # WARNING: default namespace
@@ -80,8 +81,9 @@ class WorkflowRouter:
         except errors.TeamNotFoundError:
             logger.debug("(workflow-router) Team not found")
             logger.warning(
-                "Tried to trigger action %s for workflow %s / %s, but team %s not found",
-                action_details.action,
+                "Tried to trigger step %s (%s) for workflow %s / %s, but team %s not found",
+                step,
+                step_details.action,
                 workflow_spec.name,
                 workflow_record.id,
                 workflow_spec.team,
@@ -90,16 +92,16 @@ class WorkflowRouter:
 
         # Map workflow context to action inputs
         trigger_payload = WorkflowActionTriggerPayload(
-            action=action_details.action,
+            step=step,
+            action=step_details.action,
             inputs={
-                k: workflow_record.context[v]
-                for k, v in action_details.inputMap.items()
+                k: workflow_record.context[v] for k, v in step_details.inputMap.items()
             },
-            role_context=team_resource.get_role_description(action_details.role),
+            role_context=team_resource.get_role_description(step_details.role),
         )
         # Trigger the action by sending a message to the agent's inbox
         await AgentInbox.from_role(
-            workflow_spec.team, action_details.role, rmq_client=self.rmq
+            workflow_spec.team, step_details.role, rmq_client=self.rmq
         ).trigger_action(workflow_spec.name, workflow_record.id, trigger_payload)
 
     async def _handle_initiate_workflow(
@@ -131,21 +133,24 @@ class WorkflowRouter:
             )
             return
 
-        for _, action_details in workflow_spec.actions.items():
+        for step_name, step_details in workflow_spec.steps.items():
             # If all dependencies are satisfied, trigger the action
             if all(
                 [
                     dep in workflow_record.context
-                    for dep in action_details.inputMap.values()
+                    for dep in step_details.inputMap.values()
                 ]
             ):
                 logger.debug(
-                    "(workflow-router) Triggering action %s", action_details.action
+                    "(workflow-router) Triggering step %s (%s)",
+                    step_name,
+                    step_details.action,
                 )
                 await self._trigger_action(
                     workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
-                    action_details=action_details,
+                    step=step_name,
+                    step_details=step_details,
                 )
 
     async def _handle_action_report(
@@ -177,19 +182,18 @@ class WorkflowRouter:
             )
             return
         workflow_spec = workflow_resource.spec
-        # Store the action's outputs in the workflow record's context
         action_outputs = {
-            f"{payload.action}.{output_key}": output_value
+            f"{payload.step}.{output_key}": output_value
             for output_key, output_value in payload.outputs.items()
         }
         workflow_record.context.update(action_outputs)
         # Update the action's run status in the workflow record
-        run_status = workflow_record.run_status.get(payload.action, ActionRunStatus())
+        run_status = workflow_record.run_status.get(payload.step, StepRunStatus())
         run_status.runs += 1
         run_status.results.append(
-            ActionResult(outputs=payload.outputs, error=payload.error)
+            StepResult(outputs=payload.outputs, error=payload.error)
         )
-        workflow_record.run_status[payload.action] = run_status
+        workflow_record.run_status[payload.step] = run_status
         # Update the workflow record in etcd
         try:
             WorkflowRecordService().update_workflow_record(workflow_record)
@@ -203,39 +207,36 @@ class WorkflowRouter:
             return
 
         # Trigger the appropriate action messages
-        for _, action_details in workflow_spec.actions.items():
+        for step_name, step_details in workflow_spec.steps.items():
             dependencies_satisfied = all(
                 [
                     dep in workflow_record.context
-                    for dep in action_details.inputMap.values()
+                    for dep in step_details.inputMap.values()
                 ]
             )
             if not dependencies_satisfied:
                 continue
 
-            action_run_config = action_details.runConfig
-            action_run_status = workflow_record.run_status.get(
-                action_details.action, ActionRunStatus()
-            )
+            step_run_config = step_details.runConfig
+            step_run_status = workflow_record.run_status.get(step_name, StepRunStatus())
             action_failed = (
-                action_run_status.results and action_run_status.results[-1].error
+                step_run_status.results and step_run_status.results[-1].error
             )
 
-            if action_run_status.runs == 0:
+            if step_run_status.runs == 0:
                 # If the action hasn't been triggered yet, trigger it
                 await self._trigger_action(
                     workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
-                    action_details=action_details,
+                    step=step_name,
+                    step_details=step_details,
                 )
-            elif (
-                action_failed
-                and action_run_config.num_retries >= action_run_status.runs
-            ):
+            elif action_failed and step_run_config.num_retries >= step_run_status.runs:
                 # If the action errored, and we haven't reached the max number of retries,
                 # trigger the action again
                 await self._trigger_action(
                     workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
-                    action_details=action_details,
+                    step=step_name,
+                    step_details=step_details,
                 )
