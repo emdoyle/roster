@@ -1,9 +1,9 @@
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from roster_api import settings
 
-from github import Auth
+from github import Auth, Github
 
 router = APIRouter()
 
@@ -25,4 +25,19 @@ def _github_auth(
 
 @router.post("/")
 async def handle_webhook(request: Request):
-    print(request, await request.json())
+    webhook_payload = await request.json()
+    try:
+        installation_id = int(webhook_payload["installation"]["id"])
+        repository_name = webhook_payload["repository"]["full_name"]
+        issue_number = webhook_payload["issue"]["number"]
+        comment_id = webhook_payload["comment"]["id"]
+    except (KeyError, ValueError):
+        raise HTTPException(status_code=400)
+
+    auth = _github_auth(installation_id=installation_id)
+    gh = Github(auth=auth)
+    repo = gh.get_repo(repository_name)
+    issue = repo.get_issue(issue_number)
+    comment = issue.get_comment(comment_id)
+    comment.create_reaction("heart")
+    return {}
