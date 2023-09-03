@@ -54,6 +54,6 @@ class GithubWebhookService:
         issue = repo.get_issue(issue_number)
         comment = issue.get_comment(comment_id)
 
-        if comment.user.login == "roster-ai[bot]":
+        if comment.user.login == f"{settings.GITHUB_APP_NAME}[bot]":
             return
         comment.create_reaction("heart")
