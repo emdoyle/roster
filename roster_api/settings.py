@@ -11,6 +11,8 @@ SERVER_LOG_LEVEL = getattr(
     logging, env.str("ROSTER_API_SERVER_LOG_LEVEL", "DEBUG"), "DEBUG"
 )
 
+WORKSPACE_DIR = env.str("ROSTER_API_WORKSPACE_DIR", "/tmp/roster-workspace")
+
 PORT = env.int("ROSTER_API_PORT", 7888)
 
 ETCD_HOST = env.str("ROSTER_API_ETCD_HOST", "localhost")

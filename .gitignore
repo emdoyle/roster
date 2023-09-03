@@ -27,6 +27,7 @@ build/
 # Manual test-related files
 test.py
 test_data/
+*.json
 
 # Github App Private Key
 private_key.pem
