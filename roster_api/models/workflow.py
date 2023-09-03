@@ -298,6 +298,12 @@ class WorkflowRecord(BaseModel):
         description="An identifier for the execution of the workflow.",
     )
     name: str = Field(description="The name of the workflow.")
+    outputs: dict[str, str] = Field(
+        default_factory=dict, description="The final outputs of the workflow."
+    )
+    errors: dict[str, str] = Field(
+        default_factory=dict, description="The final errors of the workflow."
+    )
     context: dict[str, str] = Field(
         default_factory=dict,
         description="The context (available values) of the workflow.",
@@ -313,6 +319,8 @@ class WorkflowRecord(BaseModel):
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "WorkflowName",
+                "outputs": {"output1": "value1", "output2": "value2"},
+                "error": "",
                 "context": {"input1": "value1", "input2": "value2"},
                 "run_status": {
                     "ActionName": StepRunStatus.Config.schema_extra["example"],

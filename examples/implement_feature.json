@@ -38,7 +38,7 @@
         "requirements_document": "PRD.requirements_document"
       },
       "outputMap": {
-        "refined_code": "workflow.output_code"
+        "refined_code": "output_code"
       }
     }
   }

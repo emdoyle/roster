@@ -182,6 +182,30 @@ class WorkflowRouter:
             )
             return
         workflow_spec = workflow_resource.spec
+        try:
+            output_map = workflow_spec.steps[payload.step].outputMap
+        except KeyError:
+            logger.debug("(workflow-router) Step not found")
+            logger.warning(
+                "Tried to handle action report %s for workflow %s / %s, but step '%s' not found",
+                payload.action,
+                message.workflow,
+                message.id,
+                payload.step,
+            )
+            return
+
+        # Update the workflow record with the action's results
+        if payload.error:
+            workflow_record.errors.update(
+                {output_key: payload.error for output_key in output_map.keys()}
+            )
+        else:
+            for output_key, output_value in payload.outputs.items():
+                if output_key in output_map:
+                    workflow_output_key = output_map[output_key]
+                    workflow_record.outputs[workflow_output_key] = output_value
+
         action_outputs = {
             f"{payload.step}.{output_key}": output_value
             for output_key, output_value in payload.outputs.items()
