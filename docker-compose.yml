@@ -24,6 +24,7 @@ services:
       - ROSTER_API_RABBITMQ_HOST=Rabbitmq
     volumes:
       - ./roster_api:/app/roster_api
+      - ./private_key.pem:/app/private_key.pem
     ports:
       - "7888:7888"
     depends_on:

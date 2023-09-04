@@ -10,6 +10,7 @@ from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
 from roster_api.messaging.workflow import WorkflowRouter
 from roster_api.watchers.all import setup_watchers, teardown_watchers
+from roster_api.workspace.manager import WorkspaceManager
 
 from . import constants, settings
 from .api.activity import router as activity_router
@@ -52,6 +53,7 @@ def setup_logging():
 
 
 workflow_message_router = WorkflowRouter()
+workspace_manager = WorkspaceManager()
 
 
 async def setup():
@@ -61,12 +63,14 @@ async def setup():
     #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
     # Other high-level controllers, actors setup here
-    await asyncio.gather(workflow_message_router.setup())
+    await asyncio.gather(workflow_message_router.setup(), workspace_manager.setup())
 
 
 async def teardown():
     # Other high-level controllers, actors teardown here
-    await asyncio.gather(workflow_message_router.teardown())
+    await asyncio.gather(
+        workflow_message_router.teardown(), workspace_manager.teardown()
+    )
     teardown_watchers()
     await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
 
