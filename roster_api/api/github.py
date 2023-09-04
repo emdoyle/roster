@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-
-from .service import GithubWebhookService
+from roster_api.github.service import GithubService
 
 router = APIRouter()
 
@@ -15,7 +14,7 @@ async def handle_webhook(request: Request):
     except (KeyError, ValueError):
         raise HTTPException(status_code=400)
 
-    webhook_service = GithubWebhookService(
+    github_manager = GithubService(
         installation_id=installation_id, repository_name=repository_name
     )
 
@@ -23,6 +22,6 @@ async def handle_webhook(request: Request):
         "opened",
         "reopened",
     ]:
-        await webhook_service.handle_issue_created(payload=webhook_payload)
+        await github_manager.handle_issue_created(payload=webhook_payload)
     elif "issue" in webhook_payload and "comment" in webhook_payload:
-        await webhook_service.handle_issue_comment(payload=webhook_payload)
+        await github_manager.handle_issue_comment(payload=webhook_payload)

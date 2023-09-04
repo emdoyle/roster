@@ -10,12 +10,13 @@ from roster_api.db.etcd import get_etcd_client
 from roster_api.events.status import StatusEvent
 from roster_api.models.agent import AgentResource, AgentSpec, AgentStatus
 from roster_api.models.chat import ConversationMessage
+from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class AgentService:
-    KEY_PREFIX = "/registry/agents"
+    KEY_PREFIX = "/resources/agents"
     DEFAULT_NAMESPACE = "default"
 
     def __init__(self, etcd_client: Optional[etcd3.Etcd3Client] = None):
@@ -32,7 +33,7 @@ class AgentService:
         agent_key = self._get_agent_key(agent.name, namespace)
         agent_resource = AgentResource.initial_state(spec=agent)
         created = self.etcd_client.put_if_not_exists(
-            agent_key, agent_resource.serialize()
+            agent_key, serialize(agent_resource)
         )
         if not created:
             raise errors.AgentAlreadyExistsError(agent=agent)
@@ -44,12 +45,12 @@ class AgentService:
         agent_data, _ = self.etcd_client.get(agent_key)
         if not agent_data:
             raise errors.AgentNotFoundError(agent=name)
-        return AgentResource.deserialize_from_etcd(agent_data)
+        return deserialize_from_etcd(AgentResource, agent_data)
 
     def list_agents(self, namespace: str = DEFAULT_NAMESPACE) -> list[AgentResource]:
         agent_key = self._get_agent_key("", namespace)
         agent_data = self.etcd_client.get_prefix(agent_key)
-        return [AgentResource.deserialize_from_etcd(data) for data, _ in agent_data]
+        return [deserialize_from_etcd(AgentResource, data) for data, _ in agent_data]
 
     def update_agent(
         self, agent: AgentSpec, namespace: str = DEFAULT_NAMESPACE
@@ -57,7 +58,7 @@ class AgentService:
         agent_key = self._get_agent_key(agent.name, namespace)
         agent_resource = self.get_agent(agent.name, namespace)
         agent_resource.spec = agent
-        self.etcd_client.put(agent_key, agent_resource.serialize())
+        self.etcd_client.put(agent_key, serialize(agent_resource))
         logger.debug(f"Updated Agent {agent.name}.")
         return agent_resource
 
@@ -121,9 +122,9 @@ class AgentService:
             )
         except pydantic.ValidationError as e:
             raise errors.InvalidEventError(event=status_update) from e
-        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
+        agent_resource = deserialize_from_etcd(AgentResource, agent_data)
         agent_resource.status = updated_status
-        self.etcd_client.put(agent_key, agent_resource.serialize())
+        self.etcd_client.put(agent_key, serialize(agent_resource))
         logger.debug("Updated Agent %s status.", status_update.name)
 
     def _handle_agent_status_delete(self, status_update: StatusEvent):
@@ -132,9 +133,9 @@ class AgentService:
         if not agent_data:
             logger.debug("Agent %s already deleted.", status_update.name)
             return
-        agent_resource = AgentResource.deserialize_from_etcd(agent_data)
+        agent_resource = deserialize_from_etcd(AgentResource, agent_data)
         agent_resource.status = AgentStatus(name=status_update.name, status="deleted")
-        self.etcd_client.put(agent_key, agent_resource.serialize())
+        self.etcd_client.put(agent_key, serialize(agent_resource))
         logger.debug("Deleted Agent %s status.", status_update.name)
 
     def handle_agent_status_update(self, status_update: StatusEvent):

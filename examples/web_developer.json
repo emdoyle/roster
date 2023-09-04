@@ -39,22 +39,6 @@
           "name": "code"
         }
       ]
-    },
-    {
-      "name": "CreatePullRequest",
-      "description": "Create a Github pull request for a branch of code",
-      "inputs": [
-        {
-          "type": "code",
-          "name": "code"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "github_pr",
-          "name": "pull_request"
-        }
-      ]
     }
   ]
 }

@@ -48,7 +48,7 @@ async def events(
             or (status_changes and event.status_changed)
         ):
             # This listener cares about this event's changes
-            event_queue.put_nowait(event.serialize() + b"\n\n")
+            event_queue.put_nowait(serialize(event) + b"\n\n")
         else:
             # This listener doesn't care about this event's changes
             logger.debug(f"Skipping event: {event}")

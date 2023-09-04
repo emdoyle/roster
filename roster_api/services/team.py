@@ -5,12 +5,13 @@ import etcd3
 from roster_api import constants, errors
 from roster_api.db.etcd import get_etcd_client
 from roster_api.models.team import TeamResource, TeamSpec
+from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class TeamService:
-    KEY_PREFIX = "/registry/teams"
+    KEY_PREFIX = "/resources/teams"
     DEFAULT_NAMESPACE = "default"
 
     def __init__(self, etcd_client: Optional[etcd3.Etcd3Client] = None):
@@ -28,9 +29,7 @@ class TeamService:
             "Assuming members are accurately specified for Team %s.", team.name
         )
         team_resource.status.members = team_resource.spec.members
-        created = self.etcd_client.put_if_not_exists(
-            team_key, team_resource.serialize()
-        )
+        created = self.etcd_client.put_if_not_exists(team_key, serialize(team_resource))
         if not created:
             raise errors.TeamAlreadyExistsError(team=team)
         logger.debug("Created Team %s", team.name)
@@ -41,12 +40,12 @@ class TeamService:
         team_data, _ = self.etcd_client.get(team_key)
         if not team_data:
             raise errors.TeamNotFoundError(team=name)
-        return TeamResource.deserialize_from_etcd(team_data)
+        return deserialize_from_etcd(TeamResource, team_data)
 
     def list_teams(self, namespace: str = DEFAULT_NAMESPACE) -> list[TeamResource]:
         team_key = self._get_team_key("", namespace)
         team_data = self.etcd_client.get_prefix(team_key)
-        return [TeamResource.deserialize_from_etcd(data) for data, _ in team_data]
+        return [deserialize_from_etcd(TeamResource, data) for data, _ in team_data]
 
     def update_team(
         self, team: TeamSpec, namespace: str = DEFAULT_NAMESPACE
@@ -58,7 +57,7 @@ class TeamService:
             "Assuming members are accurately specified for Team %s.", team.name
         )
         team_resource.status.members = team_resource.spec.members
-        self.etcd_client.put(team_key, team_resource.serialize())
+        self.etcd_client.put(team_key, serialize(team_resource))
         logger.debug(f"Updated Team {team.name}.")
         return team_resource
 

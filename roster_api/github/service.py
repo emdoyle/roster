@@ -1,9 +1,8 @@
 from typing import Optional
 
 from roster_api import settings
-from roster_api.workspace.git import GitWorkspace
 
-from github import Auth, Github
+from github import Auth, Github, GithubException
 
 with open(settings.GITHUB_APP_PRIVATE_KEY, "r") as _f:
     private_key = _f.read()
@@ -21,19 +20,35 @@ def _github_auth(
     )
 
 
-class GithubWebhookService:
-    def __init__(self, installation_id: int, repository_name: str):
+class GithubService:
+    def __init__(
+        self,
+        installation_id: int,
+        repository_name: str,
+    ):
         self.installation_id = installation_id
         self.repository_name = repository_name
         self.gh_auth = _github_auth(installation_id=installation_id)
         self.gh = Github(auth=self.gh_auth)
-        simple_repo_name = repository_name.split("/")[-1]
-        self.workspace = GitWorkspace(
-            root_dir=f"{settings.WORKSPACE_DIR}/{installation_id}/{simple_repo_name}"
-        )
+
+    def get_installation_token(self) -> str:
+        return self.gh_auth.token
+
+    def get_repo_url(self) -> str:
+        repo = self.gh.get_repo(self.repository_name)
+        return repo.clone_url
+
+    def create_pull_request(
+        self, title: str, body: str, head: str, base: str = "main"
+    ) -> str:
+        repo = self.gh.get_repo(self.repository_name)
+        try:
+            pr = repo.create_pull(title=title, body=body, head=head, base=base)
+            return pr.html_url
+        except GithubException as e:
+            raise ValueError(f"Failed to create a pull request: {e}") from e
 
     async def handle_issue_created(self, payload: dict):
-        """Use GitWorkspace to clone the repo to a local workspace directory"""
         try:
             issue_number = payload["issue"]["number"]
         except KeyError:

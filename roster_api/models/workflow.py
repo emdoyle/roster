@@ -327,24 +327,3 @@ class WorkflowRecord(BaseModel):
                 },
             }
         }
-
-    # TODO: consider sharing ser/deser with RosterResource
-    def serialize(self) -> bytes:
-        return json.dumps(self.json()).encode("utf-8")
-
-    @classmethod
-    def deserialize_from_etcd(cls, data: bytes) -> "WorkflowRecord":
-        try:
-            # SSE data is double-encoded
-            return cls(**json.loads(json.loads(data.decode("utf-8"))))
-        except (
-            pydantic.ValidationError,
-            UnicodeDecodeError,
-            json.JSONDecodeError,
-        ) as e:
-            logger.error(
-                "Failed to deserialize data from etcd for class: %s", cls.__name__
-            )
-            raise errors.InvalidResourceError(
-                "Could not deserialize resource from etcd."
-            ) from e

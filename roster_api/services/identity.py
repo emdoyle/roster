@@ -5,12 +5,13 @@ import etcd3
 from roster_api import constants, errors
 from roster_api.db.etcd import get_etcd_client
 from roster_api.models.identity import IdentityResource, IdentitySpec
+from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class IdentityService:
-    KEY_PREFIX = "/registry/identities"
+    KEY_PREFIX = "/resources/identities"
     DEFAULT_NAMESPACE = "default"
 
     def __init__(self, etcd_client: Optional[etcd3.Etcd3Client] = None):
@@ -27,7 +28,7 @@ class IdentityService:
         identity_key = self._get_identity_key(identity.name, namespace)
         identity_resource = IdentityResource.initial_state(spec=identity)
         created = self.etcd_client.put_if_not_exists(
-            identity_key, identity_resource.serialize()
+            identity_key, serialize(identity_resource)
         )
         if not created:
             raise errors.IdentityAlreadyExistsError(identity=identity)
@@ -41,7 +42,7 @@ class IdentityService:
         identity_data, _ = self.etcd_client.get(identity_key)
         if not identity_data:
             raise errors.IdentityNotFoundError(identity=name)
-        return IdentityResource.deserialize_from_etcd(identity_data)
+        return deserialize_from_etcd(IdentityResource, identity_data)
 
     def list_identities(
         self, namespace: str = DEFAULT_NAMESPACE
@@ -49,7 +50,7 @@ class IdentityService:
         identity_key = self._get_identity_key("", namespace)
         identity_data = self.etcd_client.get_prefix(identity_key)
         return [
-            IdentityResource.deserialize_from_etcd(data) for data, _ in identity_data
+            deserialize_from_etcd(IdentityResource, data) for data, _ in identity_data
         ]
 
     def update_identity(
@@ -58,7 +59,7 @@ class IdentityService:
         identity_key = self._get_identity_key(identity.name, namespace)
         identity_resource = self.get_identity(identity.name, namespace)
         identity_resource.spec = identity
-        self.etcd_client.put(identity_key, identity_resource.serialize())
+        self.etcd_client.put(identity_key, serialize(identity_resource))
         logger.debug(f"Updated Identity {identity.name}.")
         return identity_resource
 

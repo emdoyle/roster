@@ -31,7 +31,7 @@ def get_resource_watcher() -> "ResourceWatcher":
 
 # TODO: might make sense to allow filtering at the connection level
 class ResourceWatcher(BaseWatcher):
-    KEY_PREFIX = "/registry"
+    KEY_PREFIX = "/resources"
 
     def __init__(self, listeners: Optional[list[Callable]] = None):
         self.listeners = listeners or []
@@ -50,6 +50,7 @@ class ResourceWatcher(BaseWatcher):
                 # SSE events are double-encoded
                 resource = json.loads(json.loads(event.value.decode("utf-8")))
                 prev_value = getattr(event, "prev_value", None)
+                prev_resource = None
                 if prev_value:
                     # This is an update event
                     prev_resource = json.loads(
@@ -67,6 +68,7 @@ class ResourceWatcher(BaseWatcher):
                     namespace=namespace,
                     name=name,
                     resource=resource,
+                    previous_resource=prev_resource,
                     spec_changed=spec_changed,
                     status_changed=status_changed,
                 )

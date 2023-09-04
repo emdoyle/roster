@@ -1,5 +1,5 @@
 import json
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 from roster_api.resources.base import ResourceType
@@ -13,6 +13,9 @@ class PutResourceEvent(BaseModel):
     )
     name: str = Field(description="The name of the resource.")
     resource: dict = Field(description="The resource data itself.")
+    previous_resource: Optional[dict] = Field(
+        default=None, description="The previous resource data, when available."
+    )
     spec_changed: bool = Field(
         default=False,
         description="Whether the spec of the resource has changed since the last event.",
@@ -27,9 +30,6 @@ class PutResourceEvent(BaseModel):
 
     def __str__(self):
         return f"({self.event_type} {self.resource_type.value} {self.namespace}/{self.name})"
-
-    def serialize(self) -> bytes:
-        return json.dumps(self.json()).encode("utf-8")
 
 
 class DeleteResourceEvent(BaseModel):
@@ -48,9 +48,6 @@ class DeleteResourceEvent(BaseModel):
 
     def __str__(self):
         return f"({self.event_type} {self.resource_type.value} {self.namespace}/{self.name})"
-
-    def serialize(self) -> bytes:
-        return json.dumps(self.json()).encode("utf-8")
 
 
 ResourceEvent = Union[PutResourceEvent, DeleteResourceEvent]

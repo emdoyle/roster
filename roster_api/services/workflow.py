@@ -7,14 +7,14 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.db.etcd import get_etcd_client
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
-from roster_api.models.workflow import (WorkflowRecord, WorkflowResource,
-                                        WorkflowSpec)
+from roster_api.models.workflow import WorkflowRecord, WorkflowResource, WorkflowSpec
+from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
 
 class WorkflowService:
-    KEY_PREFIX = "/registry/workflows"
+    KEY_PREFIX = "/resources/workflows"
     DEFAULT_NAMESPACE = "default"
 
     def __init__(
@@ -36,7 +36,7 @@ class WorkflowService:
         workflow_key = self._get_workflow_key(workflow.name, namespace)
         workflow_resource = WorkflowResource.initial_state(spec=workflow)
         created = self.etcd_client.put_if_not_exists(
-            workflow_key, workflow_resource.serialize()
+            workflow_key, serialize(workflow_resource)
         )
         if not created:
             raise errors.WorkflowAlreadyExistsError(workflow=workflow)
@@ -50,7 +50,7 @@ class WorkflowService:
         workflow_data, _ = self.etcd_client.get(workflow_key)
         if not workflow_data:
             raise errors.WorkflowNotFoundError(workflow=name)
-        return WorkflowResource.deserialize_from_etcd(workflow_data)
+        return deserialize_from_etcd(WorkflowResource, workflow_data)
 
     def list_workflows(
         self, namespace: str = DEFAULT_NAMESPACE
@@ -58,7 +58,7 @@ class WorkflowService:
         workflow_key = self._get_workflow_key("", namespace)
         workflow_data = self.etcd_client.get_prefix(workflow_key)
         return [
-            WorkflowResource.deserialize_from_etcd(data) for data, _ in workflow_data
+            deserialize_from_etcd(WorkflowResource, data) for data, _ in workflow_data
         ]
 
     def update_workflow(
@@ -67,7 +67,7 @@ class WorkflowService:
         workflow_key = self._get_workflow_key(workflow.name, namespace)
         workflow_resource = self.get_workflow(workflow.name, namespace)
         workflow_resource.spec = workflow
-        self.etcd_client.put(workflow_key, workflow_resource.serialize())
+        self.etcd_client.put(workflow_key, serialize(workflow_resource))
         logger.debug("Updated Workflow %s.", workflow.name)
         return workflow_resource
 
@@ -131,7 +131,7 @@ class WorkflowRecordService:
             workflow_name, workflow_record.id, namespace=namespace
         )
         created = self.etcd_client.put_if_not_exists(
-            record_key, workflow_record.serialize()
+            record_key, serialize(workflow_record)
         )
         if not created:
             raise errors.WorkflowRecordAlreadyExistsError(
@@ -151,7 +151,7 @@ class WorkflowRecordService:
             raise errors.WorkflowRecordNotFoundError(
                 workflow=workflow_name, record=record_id
             )
-        return WorkflowRecord.deserialize_from_etcd(record_data)
+        return deserialize_from_etcd(WorkflowRecord, record_data)
 
     def list_workflow_records(
         self, workflow_name: str, namespace: str = DEFAULT_NAMESPACE
@@ -159,7 +159,7 @@ class WorkflowRecordService:
         workflow_key = self._get_workflow_key(workflow_name, namespace=namespace)
         workflow_record_data = self.etcd_client.get_prefix(workflow_key)
         return [
-            WorkflowRecord.deserialize_from_etcd(data)
+            deserialize_from_etcd(WorkflowRecord, data)
             for data, _ in workflow_record_data
         ]
 
@@ -174,7 +174,7 @@ class WorkflowRecordService:
             raise errors.WorkflowRecordNotFoundError(
                 workflow=workflow_record.name, record=workflow_record.id
             )
-        self.etcd_client.put(record_key, workflow_record.serialize())
+        self.etcd_client.put(record_key, serialize(workflow_record))
         logger.debug(
             "Updated Workflow Record %s / %s", workflow_record.name, workflow_record.id
         )

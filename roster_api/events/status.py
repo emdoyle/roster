@@ -22,9 +22,6 @@ class PutStatusEvent(BaseModel):
     def __str__(self):
         return f"({self.event_type} {self.resource_type} {self.namespace}/{self.name})"
 
-    def serialize(self) -> bytes:
-        return json.dumps(self.json()).encode("utf-8")
-
 
 class DeleteStatusEvent(BaseModel):
     host_ip: str = Field(
@@ -42,9 +39,6 @@ class DeleteStatusEvent(BaseModel):
 
     def __str__(self):
         return f"({self.event_type} {self.resource_type} {self.namespace}/{self.name})"
-
-    def serialize(self) -> bytes:
-        return json.dumps(self.json()).encode("utf-8")
 
 
 StatusEvent = Union[PutStatusEvent, DeleteStatusEvent]

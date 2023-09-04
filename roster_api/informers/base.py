@@ -11,9 +11,17 @@ class Informer(ABC, Generic[T, E]):
         """setup informer -- called once on startup to establish listeners on remote data source"""
 
     @abstractmethod
-    async def add_event_listener(self, callback: Callable[[E], None]):
-        """add callback to be called when informer receives an object"""
+    async def add_listener(self, listener: Callable[[E], None]):
+        """add listener which receives objects on CRUD operations"""
+
+    @abstractmethod
+    async def remove_listener(self, listener: Callable[[E], None]):
+        """remove listener"""
 
     @abstractmethod
     def list_resources(self) -> list[T]:
         """list all objects"""
+
+    @abstractmethod
+    async def teardown(self):
+        """teardown informer -- release listeners on remote data sources"""

@@ -189,6 +189,19 @@ class InvalidResourceError(RosterAPIError):
         self.resource = resource
 
 
+class DeserializationError(RosterAPIError):
+    """Exception raised when object data cannot be deserialized."""
+
+    def __init__(
+        self,
+        message="The data is invalid.",
+        details=None,
+        data=None,
+    ):
+        super().__init__(message, details)
+        self.data = data
+
+
 class IdentityError(RosterAPIError):
     """Exception raised for identity-related errors."""
 
@@ -310,3 +323,42 @@ class TeardownError(RosterAPIError):
         details=None,
     ):
         super().__init__(message, details)
+
+
+class WorkspaceError(RosterAPIError):
+    """Exception raised for workspace-related errors."""
+
+    def __init__(
+        self,
+        message="An unexpected error occurred for the Workspace.",
+        details=None,
+        workspace=None,
+    ):
+        super().__init__(message, details)
+        self.workspace = workspace
+
+
+class WorkspaceAlreadyExistsError(WorkspaceError):
+    """Exception raised when a Workspace already exists."""
+
+    def __init__(
+        self,
+        message="A Workspace with the specified name already exists.",
+        details=None,
+        workspace=None,
+    ):
+        super().__init__(message, details)
+        self.workspace = workspace
+
+
+class WorkspaceNotFoundError(WorkspaceError):
+    """Exception raised when a Workspace is not found."""
+
+    def __init__(
+        self,
+        message="The specified Workspace was not found.",
+        details=None,
+        workspace=None,
+    ):
+        super().__init__(message, details)
+        self.workspace = workspace
