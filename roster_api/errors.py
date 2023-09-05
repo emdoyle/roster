@@ -362,3 +362,7 @@ class WorkspaceNotFoundError(WorkspaceError):
     ):
         super().__init__(message, details)
         self.workspace = workspace
+
+
+class GithubWebhookError(RosterAPIError):
+    """Exception raised for GitHub webhook-related errors"""

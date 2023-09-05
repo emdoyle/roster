@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
-from roster_api.singletons import get_workflow_router, get_workspace_manager
+from roster_api.singletons import (get_roster_github_app, get_workflow_router,
+                                   get_workspace_manager)
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
@@ -53,6 +54,7 @@ def setup_logging():
 
 workflow_message_router = get_workflow_router()
 workspace_manager = get_workspace_manager()
+roster_github_app = get_roster_github_app()
 
 
 async def setup():
@@ -62,11 +64,14 @@ async def setup():
     #   currently does not kill the main thread on connection error (but probably should)
     setup_watchers()
     # Other high-level controllers, actors setup here
+    # TODO: consider moving within roster_orchestration?
     await asyncio.gather(workflow_message_router.setup(), workspace_manager.setup())
+    await roster_github_app.setup()
 
 
 async def teardown():
     # Other high-level controllers, actors teardown here
+    await roster_github_app.teardown()
     await asyncio.gather(
         workflow_message_router.teardown(), workspace_manager.teardown()
     )

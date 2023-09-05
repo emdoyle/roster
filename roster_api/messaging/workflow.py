@@ -1,6 +1,7 @@
+import asyncio
 import json
 import logging
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
@@ -114,7 +115,9 @@ class WorkflowRouter:
     ):
         try:
             workflow_record = WorkflowRecordService().create_workflow_record(
-                message.workflow, payload.inputs
+                message.workflow,
+                inputs=payload.inputs,
+                workspace_name=payload.workspace,
             )
         except errors.WorkflowRecordAlreadyExistsError:
             logger.debug("(workflow-router) Workflow record already exists")
@@ -139,8 +142,10 @@ class WorkflowRouter:
             return
 
         # Notify listeners that the workflow has started
-        self._notify_workflow_started(
-            workflow=workflow_resource, workflow_record=workflow_record
+        asyncio.create_task(
+            self._notify_workflow_started(
+                workflow=workflow_resource, workflow_record=workflow_record
+            )
         )
 
         for step_name, step_details in workflow_spec.steps.items():
@@ -248,8 +253,10 @@ class WorkflowRouter:
             workflow_record.outputs.keys() & workflow_record.errors.keys()
             == required_outputs
         ):
-            self._notify_workflow_finished(
-                workflow=workflow_resource, workflow_record=workflow_record
+            asyncio.create_task(
+                self._notify_workflow_finished(
+                    workflow=workflow_resource, workflow_record=workflow_record
+                )
             )
             return
 
@@ -288,56 +295,66 @@ class WorkflowRouter:
                     step_details=step_details,
                 )
 
-    def _notify_workflow_started(
+    async def _notify_workflow_started(
         self, workflow: WorkflowResource, workflow_record: WorkflowRecord
     ):
-        for listener in self.workflow_start_listeners:
-            try:
+        results = await asyncio.gather(
+            *[
                 listener(
                     WorkflowStartEvent(
                         workflow=workflow, workflow_record=workflow_record
                     )
                 )
-            except Exception as e:
+                for listener in self.workflow_start_listeners
+            ],
+            return_exceptions=True,
+        )
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
                 logger.debug(
                     "(workflow-router) Exception while notifying workflow start listener %s: %s",
-                    listener,
-                    e,
+                    self.workflow_start_listeners[i],
+                    result,
                 )
 
-    def _notify_workflow_finished(
+    async def _notify_workflow_finished(
         self, workflow: WorkflowResource, workflow_record: WorkflowRecord
     ):
-        for listener in self.workflow_finish_listeners:
-            try:
+        results = await asyncio.gather(
+            *[
                 listener(
                     WorkflowFinishEvent(
                         workflow=workflow, workflow_record=workflow_record
                     )
                 )
-            except Exception as e:
+                for listener in self.workflow_finish_listeners
+            ],
+            return_exceptions=True,
+        )
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
                 logger.debug(
                     "(workflow-router) Exception while notifying workflow finish listener %s: %s",
-                    listener,
-                    e,
+                    self.workflow_finish_listeners[i],
+                    result,
                 )
 
     def add_workflow_start_listener(
-        self, listener: Callable[[WorkflowStartEvent], None]
+        self, listener: Callable[[WorkflowStartEvent], Awaitable[None]]
     ):
         self.workflow_start_listeners.append(listener)
 
     def remove_workflow_start_listener(
-        self, listener: Callable[[WorkflowStartEvent], None]
+        self, listener: Callable[[WorkflowStartEvent], Awaitable[None]]
     ):
         self.workflow_start_listeners.remove(listener)
 
     def add_workflow_finish_listener(
-        self, listener: Callable[[WorkflowFinishEvent], None]
+        self, listener: Callable[[WorkflowFinishEvent], Awaitable[None]]
     ):
         self.workflow_finish_listeners.append(listener)
 
     def remove_workflow_finish_listener(
-        self, listener: Callable[[WorkflowFinishEvent], None]
+        self, listener: Callable[[WorkflowFinishEvent], Awaitable[None]]
     ):
         self.workflow_finish_listeners.remove(listener)

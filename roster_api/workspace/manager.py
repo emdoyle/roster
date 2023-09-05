@@ -19,15 +19,15 @@ class WorkspaceManager:
 
     async def setup(self):
         await self.rmq.register_callback(
-            constants.WORKSPACE_QUEUE, self._handle_workspace_message
+            constants.WORKSPACE_QUEUE, self.handle_workspace_message
         )
 
     async def teardown(self):
         await self.rmq.deregister_callback(
-            constants.WORKSPACE_QUEUE, self._handle_workspace_message
+            constants.WORKSPACE_QUEUE, self.handle_workspace_message
         )
 
-    async def _handle_workspace_message(self, message: WorkspaceMessage):
+    async def handle_workspace_message(self, message: WorkspaceMessage):
         if message.kind != "workflow_code_report":
             logger.debug("(workspace-mgr) Unknown message kind: %s", message.kind)
             return

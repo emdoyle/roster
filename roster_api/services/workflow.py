@@ -78,7 +78,9 @@ class WorkflowService:
             logger.debug("Deleted Workflow %s.", name)
         return deleted
 
-    async def initiate_workflow(self, workflow_name: str, inputs: dict):
+    async def initiate_workflow(
+        self, workflow_name: str, inputs: dict, workspace_name: str = ""
+    ):
         workflow = self.get_workflow(workflow_name)
         logger.debug(
             "Sent message to initiate workflow %s with inputs: %s",
@@ -91,7 +93,7 @@ class WorkflowService:
                 "id": str(uuid.uuid4()),
                 "workflow": workflow.spec.name,
                 "kind": "initiate_workflow",
-                "data": {"inputs": inputs},
+                "data": {"inputs": inputs, "workspace": workspace_name},
             },
         )
 
@@ -119,6 +121,7 @@ class WorkflowRecordService:
         self,
         workflow_name: str,
         inputs: Optional[dict] = None,
+        workspace_name: str = "",
         namespace: str = DEFAULT_NAMESPACE,
     ) -> WorkflowRecord:
         # NOTE: implied that inputs are validated, might want to move that here
@@ -126,7 +129,9 @@ class WorkflowRecordService:
             f"workflow.{input_key}": input_value
             for input_key, input_value in inputs.items()
         }
-        workflow_record = WorkflowRecord(name=workflow_name, context=context)
+        workflow_record = WorkflowRecord(
+            name=workflow_name, context=context, workspace=workspace_name
+        )
         record_key = self._get_record_key(
             workflow_name, workflow_record.id, namespace=namespace
         )

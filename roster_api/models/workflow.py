@@ -146,12 +146,16 @@ class InitiateWorkflowArgs(BaseModel):
 class InitiateWorkflowPayload(BaseModel):
     KEY: ClassVar[str] = "initiate_workflow"
     inputs: dict[str, str] = Field(description="The inputs to the workflow.")
+    workspace: str = Field(
+        default="", description="The workspace in which the workflow is operating."
+    )
 
     class Config:
         validate_assignment = True
         schema_extra = {
             "example": {
                 "inputs": {"input1": "value1", "input2": "value2"},
+                "workspace": "WorkspaceName",
             }
         }
 

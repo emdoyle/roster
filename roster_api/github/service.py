@@ -1,8 +1,13 @@
+import logging
 from typing import Optional
 
-from roster_api import settings
+from roster_api import constants, errors, settings
+from roster_api.models.workspace import GithubWorkspace
 
 from github import Auth, Github, GithubException
+
+logger = logging.getLogger(constants.LOGGER_NAME)
+
 
 with open(settings.GITHUB_APP_PRIVATE_KEY, "r") as _f:
     private_key = _f.read()
@@ -31,12 +36,34 @@ class GithubService:
         self.gh_auth = _github_auth(installation_id=installation_id)
         self.gh = Github(auth=self.gh_auth)
 
+    @classmethod
+    def from_webhook_payload(cls, payload: dict) -> "GithubService":
+        try:
+            installation_id = int(payload["installation"]["id"])
+            repository_name = payload["repository"]["full_name"]
+        except (KeyError, ValueError):
+            logger.debug(
+                "(github-svc) Failed to parse installation from webhook payload: %s",
+                payload,
+            )
+            raise errors.GithubWebhookError(
+                "Could not setup GithubService from webhook payload"
+            )
+
+        return cls(installation_id=installation_id, repository_name=repository_name)
+
     def get_installation_token(self) -> str:
         return self.gh_auth.token
 
     def get_repo_url(self) -> str:
         repo = self.gh.get_repo(self.repository_name)
         return repo.clone_url
+
+    @property
+    def github_info(self) -> GithubWorkspace:
+        return GithubWorkspace(
+            installation_id=self.installation_id, repository_name=self.repository_name
+        )
 
     def create_pull_request(
         self, title: str, body: str, head: str, base: str = "main"
