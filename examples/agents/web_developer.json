@@ -1,5 +1,5 @@
 {
-  "name": "roster-web-developer",
+  "name": "WebDeveloper",
   "executor": "local",
   "image": "web_developer",
   "apiVersion": "v1",

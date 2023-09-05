@@ -1,5 +1,5 @@
 {
-  "name": "roster-product-manager",
+  "name": "ProductManager",
   "executor": "local",
   "image": "product_manager",
   "apiVersion": "v1",

@@ -1,5 +1,5 @@
 {
-  "name": "Roster",
+  "name": "RosterTeam",
   "type": "web-software",
   "apiVersion": "v1",
   "description": "A team of specialists who collaborate to produce web application software.",
@@ -18,11 +18,11 @@
   "members": {
     "ProductManager": {
       "identity": "charlie",
-      "agent": "roster-product-manager"
+      "agent": "ProductManager"
     },
     "WebDeveloper": {
       "identity": "david",
-      "agent": "roster-web-developer"
+      "agent": "WebDeveloper"
     }
   }
 }
