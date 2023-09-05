@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Initialize variables
-TESTDATA="/Users/evanmdoyle/Programming/roster/examples"
+TESTDATA="./examples"
 ROSTERURL="http://localhost:7888/v0.1"
 CONTENTTYPE="Content-Type: application/json"
 
