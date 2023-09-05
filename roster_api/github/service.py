@@ -59,12 +59,6 @@ class GithubService:
         repo = self.gh.get_repo(self.repository_name)
         return repo.clone_url
 
-    @property
-    def github_info(self) -> GithubWorkspace:
-        return GithubWorkspace(
-            installation_id=self.installation_id, repository_name=self.repository_name
-        )
-
     def create_pull_request(
         self, title: str, body: str, head: str, base: str = "main"
     ) -> str:

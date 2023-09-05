@@ -7,6 +7,7 @@ from roster_api.messaging.workflow import WorkflowRouter
 from roster_api.models.outputs import CodeOutput
 from roster_api.models.workflow import WorkflowFinishEvent
 from roster_api.models.workspace import (
+    GithubWorkspace,
     WorkflowCodeReportPayload,
     Workspace,
     WorkspaceMessage,
@@ -65,10 +66,15 @@ class RosterGithubApp:
             logger.error("(roster-gha) Failed to parse issue title from payload")
             return
 
+        # NOTE: this assumes the issue has been opened for the first time
         workspace = Workspace(
             name=f"issue-{issue_number}",
             kind="github",
-            github_info=github_service.github_info,
+            github_info=GithubWorkspace(
+                installation_id=github_service.installation_id,
+                repository_name=github_service.repository_name,
+                branch_name=f"issue-{issue_number}",
+            ),
         )
         WorkspaceService().create_workspace(workspace=workspace)
         await WorkflowService().initiate_workflow(

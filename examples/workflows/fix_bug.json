@@ -2,7 +2,7 @@
   "name": "FixBug",
   "apiVersion": "v1",
   "description": "Diagnose and fix a bug.",
-  "team": "Roster",
+  "team": "RosterTeam",
   "inputs": [
     {
       "type": "text",

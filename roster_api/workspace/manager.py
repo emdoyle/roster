@@ -55,12 +55,12 @@ class WorkspaceManager:
             repository_name=github_info.repository_name,
         )
         git_workspace = GitWorkspace(
-            root_dir=f"{settings.WORKSPACE_DIR}/{github_info.installation_id}/{github_info.repository_name}"
+            root_dir=f"{settings.WORKSPACE_DIR}/{github_info.installation_id}/{github_info.repository_name}",
+            token=github_service.get_installation_token(),
         )
 
         git_workspace.force_to_latest_main(
             repo_url=github_service.get_repo_url(),
-            token=github_service.get_installation_token(),
         )
         git_workspace.checkout_branch(github_info.branch_name)
 

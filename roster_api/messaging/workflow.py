@@ -250,7 +250,7 @@ class WorkflowRouter:
         # Determine whether the workflow is finished
         required_outputs = {output.name for output in workflow_spec.outputs}
         if (
-            workflow_record.outputs.keys() & workflow_record.errors.keys()
+            workflow_record.outputs.keys() | workflow_record.errors.keys()
             == required_outputs
         ):
             asyncio.create_task(

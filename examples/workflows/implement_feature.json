@@ -2,7 +2,7 @@
   "name": "ImplementFeature",
   "apiVersion": "v1",
   "description": "Implement a feature based on customer requirements.",
-  "team": "Roster",
+  "team": "RosterTeam",
   "inputs": [
     {
       "type": "text",
