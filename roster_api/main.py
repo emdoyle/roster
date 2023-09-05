@@ -8,14 +8,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
-from roster_api.singletons import (get_roster_github_app, get_workflow_router,
-                                   get_workspace_manager)
+from roster_api.singletons import (
+    get_roster_github_app,
+    get_workflow_router,
+    get_workspace_manager,
+)
 from roster_api.watchers.all import setup_watchers, teardown_watchers
 
 from . import constants, settings
 from .api.activity import router as activity_router
 from .api.agent import router as agent_router
 from .api.commands import router as commands_router
+from .api.github import router as github_router
 from .api.identity import router as identity_router
 from .api.team import router as team_router
 from .api.updates import router as updates_router
@@ -109,6 +113,7 @@ def get_app():
     api_router.include_router(commands_router, prefix="/commands")
 
     app.include_router(api_router, prefix=f"/{constants.API_VERSION}")
+    app.include_router(github_router, prefix="/github")
     return app
 
 

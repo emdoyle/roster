@@ -22,6 +22,7 @@ services:
       - ROSTER_API_POSTGRES_PORT=5432
       - ROSTER_API_POSTGRES_DB=rosterdb
       - ROSTER_API_RABBITMQ_HOST=Rabbitmq
+      - ROSTER_API_GITHUB_APP_ID=368182
     volumes:
       - ./roster_api:/app/roster_api
       - ./private_key.pem:/app/private_key.pem

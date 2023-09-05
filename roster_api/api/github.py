@@ -6,7 +6,7 @@ from roster_api.singletons import get_roster_github_app
 router = APIRouter()
 
 
-@router.post("/")
+@router.post("")
 async def handle_webhook(
     request: Request, github_app: RosterGithubApp = Depends(get_roster_github_app)
 ):
