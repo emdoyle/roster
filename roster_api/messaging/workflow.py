@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
@@ -12,9 +12,12 @@ from roster_api.models.workflow import (
     StepRunStatus,
     WorkflowActionReportPayload,
     WorkflowActionTriggerPayload,
+    WorkflowFinishEvent,
     WorkflowMessage,
     WorkflowRecord,
+    WorkflowResource,
     WorkflowSpec,
+    WorkflowStartEvent,
     WorkflowStep,
 )
 from roster_api.services.team import TeamService
@@ -35,6 +38,8 @@ def _workflow_inputs_are_valid(workflow_spec: WorkflowSpec, payload_inputs: dict
 class WorkflowRouter:
     def __init__(self, rmq_client: Optional[RabbitMQClient] = None):
         self.rmq: RabbitMQClient = rmq_client or get_rabbitmq()
+        self.workflow_start_listeners = []
+        self.workflow_finish_listeners = []
 
     async def setup(self) -> None:
         await self.rmq.register_callback(WORKFLOW_ROUTER_QUEUE, self.route)
@@ -133,6 +138,11 @@ class WorkflowRouter:
             )
             return
 
+        # Notify listeners that the workflow has started
+        self._notify_workflow_started(
+            workflow=workflow_resource, workflow_record=workflow_record
+        )
+
         for step_name, step_details in workflow_spec.steps.items():
             # If all dependencies are satisfied, trigger the action
             if all(
@@ -211,6 +221,7 @@ class WorkflowRouter:
             for output_key, output_value in payload.outputs.items()
         }
         workflow_record.context.update(action_outputs)
+
         # Update the action's run status in the workflow record
         run_status = workflow_record.run_status.get(payload.step, StepRunStatus())
         run_status.runs += 1
@@ -218,6 +229,7 @@ class WorkflowRouter:
             StepResult(outputs=payload.outputs, error=payload.error)
         )
         workflow_record.run_status[payload.step] = run_status
+
         # Update the workflow record in etcd
         try:
             WorkflowRecordService().update_workflow_record(workflow_record)
@@ -230,7 +242,18 @@ class WorkflowRouter:
             )
             return
 
-        # Trigger the appropriate action messages
+        # Determine whether the workflow is finished
+        required_outputs = {output.name for output in workflow_spec.outputs}
+        if (
+            workflow_record.outputs.keys() & workflow_record.errors.keys()
+            == required_outputs
+        ):
+            self._notify_workflow_finished(
+                workflow=workflow_resource, workflow_record=workflow_record
+            )
+            return
+
+        # Otherwise, trigger the appropriate action messages
         for step_name, step_details in workflow_spec.steps.items():
             dependencies_satisfied = all(
                 [
@@ -264,3 +287,57 @@ class WorkflowRouter:
                     step=step_name,
                     step_details=step_details,
                 )
+
+    def _notify_workflow_started(
+        self, workflow: WorkflowResource, workflow_record: WorkflowRecord
+    ):
+        for listener in self.workflow_start_listeners:
+            try:
+                listener(
+                    WorkflowStartEvent(
+                        workflow=workflow, workflow_record=workflow_record
+                    )
+                )
+            except Exception as e:
+                logger.debug(
+                    "(workflow-router) Exception while notifying workflow start listener %s: %s",
+                    listener,
+                    e,
+                )
+
+    def _notify_workflow_finished(
+        self, workflow: WorkflowResource, workflow_record: WorkflowRecord
+    ):
+        for listener in self.workflow_finish_listeners:
+            try:
+                listener(
+                    WorkflowFinishEvent(
+                        workflow=workflow, workflow_record=workflow_record
+                    )
+                )
+            except Exception as e:
+                logger.debug(
+                    "(workflow-router) Exception while notifying workflow finish listener %s: %s",
+                    listener,
+                    e,
+                )
+
+    def add_workflow_start_listener(
+        self, listener: Callable[[WorkflowStartEvent], None]
+    ):
+        self.workflow_start_listeners.append(listener)
+
+    def remove_workflow_start_listener(
+        self, listener: Callable[[WorkflowStartEvent], None]
+    ):
+        self.workflow_start_listeners.remove(listener)
+
+    def add_workflow_finish_listener(
+        self, listener: Callable[[WorkflowFinishEvent], None]
+    ):
+        self.workflow_finish_listeners.append(listener)
+
+    def remove_workflow_finish_listener(
+        self, listener: Callable[[WorkflowFinishEvent], None]
+    ):
+        self.workflow_finish_listeners.remove(listener)

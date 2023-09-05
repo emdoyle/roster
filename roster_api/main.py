@@ -8,9 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from roster_api.db.postgres import setup_postgres, teardown_postgres
 from roster_api.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
-from roster_api.messaging.workflow import WorkflowRouter
+from roster_api.singletons import get_workflow_router, get_workspace_manager
 from roster_api.watchers.all import setup_watchers, teardown_watchers
-from roster_api.workspace.manager import WorkspaceManager
 
 from . import constants, settings
 from .api.activity import router as activity_router
@@ -52,8 +51,8 @@ def setup_logging():
     logs_enabled = True
 
 
-workflow_message_router = WorkflowRouter()
-workspace_manager = WorkspaceManager()
+workflow_message_router = get_workflow_router()
+workspace_manager = get_workspace_manager()
 
 
 async def setup():

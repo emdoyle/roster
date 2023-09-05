@@ -1,11 +1,9 @@
-import json
 import logging
 import uuid
 from typing import ClassVar
 
-import pydantic
 from pydantic import BaseModel, Field, constr
-from roster_api import constants, errors
+from roster_api import constants
 from roster_api.models.base import RosterResource
 from roster_api.models.common import TypedArgument
 
@@ -298,6 +296,9 @@ class WorkflowRecord(BaseModel):
         description="An identifier for the execution of the workflow.",
     )
     name: str = Field(description="The name of the workflow.")
+    workspace: str = Field(
+        default="", description="The name of the associated workspace (if any)."
+    )
     outputs: dict[str, str] = Field(
         default_factory=dict, description="The final outputs of the workflow."
     )
@@ -319,6 +320,7 @@ class WorkflowRecord(BaseModel):
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "WorkflowName",
+                "workspace": "my-branch-workspace",
                 "outputs": {"output1": "value1", "output2": "value2"},
                 "error": "",
                 "context": {"input1": "value1", "input2": "value2"},
@@ -327,3 +329,14 @@ class WorkflowRecord(BaseModel):
                 },
             }
         }
+
+
+# TODO: narrow these to specific fields?
+class WorkflowStartEvent(BaseModel):
+    workflow: WorkflowResource
+    workflow_record: WorkflowRecord
+
+
+class WorkflowFinishEvent(BaseModel):
+    workflow: WorkflowResource
+    workflow_record: WorkflowRecord
