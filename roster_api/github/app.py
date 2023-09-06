@@ -66,7 +66,6 @@ class RosterGithubApp:
             logger.error("(roster-gha) Failed to parse issue title from payload")
             return
 
-        # NOTE: this assumes the issue has been opened for the first time
         workspace = Workspace(
             name=f"issue-{issue_number}",
             kind="github",
@@ -76,11 +75,14 @@ class RosterGithubApp:
                 branch_name=f"issue-{issue_number}",
             ),
         )
-        WorkspaceService().create_workspace(workspace=workspace)
+        WorkspaceService().update_or_create_workspace(workspace=workspace)
         await WorkflowService().initiate_workflow(
             workflow_name="ImplementFeature",  # TODO: make this configurable
             inputs={
                 "feature_description": f"Title: {issue_title}\n\nRequest:\n{issue_body}",
+                "codebase_tree": self.workspace_manager.build_codebase_tree(
+                    github_service=github_service
+                ),
             },
             workspace_name=workspace.name,
         )
@@ -101,6 +103,7 @@ class RosterGithubApp:
             return
         workspace = workspace_service.get_workspace(event.workflow_record.workspace)
         workflow_outputs = event.workflow.spec.outputs
+
         code_output_keys = [
             output.name for output in workflow_outputs if output.type == "code"
         ]
@@ -110,8 +113,14 @@ class RosterGithubApp:
                 code_output_payload = json.loads(
                     event.workflow_record.outputs[code_output_key]
                 )
-                code_output = CodeOutput(**code_output_payload)
-                code_outputs.append(code_output)
+                # We transparently support CodeOutput[] or CodeOutput for the declared 'code' data type
+                if isinstance(code_output_payload, list):
+                    code_outputs.extend(
+                        (CodeOutput(**payload) for payload in code_output_payload)
+                    )
+                else:
+                    code_output = CodeOutput(**code_output_payload)
+                    code_outputs.append(code_output)
             except Exception as e:
                 logger.error(
                     "(roster-gha) Failed to parse code output (%s): %s",

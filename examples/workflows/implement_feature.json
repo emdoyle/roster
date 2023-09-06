@@ -7,6 +7,10 @@
     {
       "type": "text",
       "name": "feature_description"
+    },
+    {
+      "type": "text",
+      "name": "codebase_tree"
     }
   ],
   "outputs": [
@@ -23,19 +27,30 @@
         "customer_requests": "workflow.feature_description"
       }
     },
-    "Code": {
+    "PlanCode": {
+      "role": "WebDeveloper",
+      "action": "PlanCodeChanges",
+      "inputMap": {
+        "requirements_document": "PRD.requirements_document",
+        "codebase_tree": "workflow.codebase_tree"
+      }
+    },
+    "WriteCode": {
       "role": "WebDeveloper",
       "action": "WriteCode",
       "inputMap": {
-        "requirements_document": "PRD.requirements_document"
+        "requirements_document": "PRD.requirements_document",
+        "codebase_tree": "workflow.codebase_tree",
+        "implementation_plan": "PlanCode.implementation_plan"
       }
     },
-    "Refine": {
+    "RefineCode": {
       "role": "WebDeveloper",
       "action": "RefineCode",
       "inputMap": {
-        "code": "Code.code",
-        "requirements_document": "PRD.requirements_document"
+        "code": "WriteCode.code",
+        "requirements_document": "PRD.requirements_document",
+        "codebase_tree": "workflow.codebase_tree"
       },
       "outputMap": {
         "refined_code": "output_code"

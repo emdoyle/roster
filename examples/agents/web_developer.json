@@ -5,22 +5,22 @@
   "apiVersion": "v1",
   "actions": [
     {
-      "name": "DiagnoseBug",
-      "description": "Perform a root-cause analysis of a bug based on a description and context.",
+      "name": "PlanCodeChanges",
+      "description": "Decide which files should be changed, created or deleted, and provide a short description of the changes required in each.",
       "inputs": [
         {
           "type": "text",
-          "name": "bug_description"
+          "name": "requirements_document"
         },
         {
           "type": "text",
-          "name": "error_context"
+          "name": "codebase_tree"
         }
       ],
       "outputs": [
         {
           "type": "text",
-          "name": "bug_diagnosis"
+          "name": "implementation_plan"
         }
       ]
     },
@@ -37,6 +37,30 @@
         {
           "type": "code",
           "name": "code"
+        }
+      ]
+    },
+    {
+      "name": "RefineCode",
+      "description": "Write code to implement a feature based on a requirements document",
+      "inputs": [
+        {
+          "type": "text",
+          "name": "requirements_document"
+        },
+        {
+          "type": "text",
+          "name": "codebase_tree"
+        },
+        {
+          "type": "code",
+          "name": "code"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "code",
+          "name": "refined_code"
         }
       ]
     }

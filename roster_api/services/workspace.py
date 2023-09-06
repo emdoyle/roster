@@ -46,7 +46,7 @@ class WorkspaceService:
         workspace_data = self.etcd_client.get_prefix(workspace_key)
         return [deserialize_from_etcd(Workspace, data) for data, _ in workspace_data]
 
-    def update_workspace(
+    def update_or_create_workspace(
         self, workspace: Workspace, namespace: str = DEFAULT_NAMESPACE
     ) -> Workspace:
         workspace_key = self._get_workspace_key(workspace.name, namespace)

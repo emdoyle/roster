@@ -21,6 +21,11 @@ class Tag(BaseModel):
     children: list["Tag"] = Field(default_factory=list)
 
 
+def build_codebase_tree(root_dir: str) -> str:
+    codebase_tree_generator = CtagFileTreeGenerator(repo_path=root_dir)
+    return codebase_tree_generator.generate_tree()
+
+
 class CtagFileTreeGenerator:
     # TODO: wildcard/pattern support
     DEFAULT_EXCLUDED_TAGS = [
@@ -159,11 +164,11 @@ class CtagFileTreeGenerator:
             lines.extend(self.tag_lines(tag.children, indent_level + 1))
         return lines
 
-    def generate_tree(self) -> list[str]:
+    def generate_tree(self) -> str:
         ctags_data = self.generate_ctags(self.repo_path)
         tree = self.parse_ctags(ctags_data)
         lines = []
         for file, tags in sorted(tree.items()):
             lines.append(f"{file}:")
             lines.extend(self.tag_lines(tags))
-        return lines
+        return "\n".join(lines)

@@ -2,12 +2,13 @@ import logging
 from typing import Optional
 
 import pydantic
-from roster_api import constants, settings
+from roster_api import constants
+from roster_api.github.codebase_tools.tree import build_codebase_tree
+from roster_api.github.service import GithubService
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
 from roster_api.models.workspace import WorkflowCodeReportPayload, WorkspaceMessage
+from roster_api.services.workspace import WorkspaceService
 
-from ..github.service import GithubService
-from ..services.workspace import WorkspaceService
 from .git import GitWorkspace
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -26,6 +27,18 @@ class WorkspaceManager:
         await self.rmq.deregister_callback(
             constants.WORKSPACE_QUEUE, self.handle_workspace_message
         )
+
+    def build_codebase_tree(self, github_service: GithubService) -> str:
+        git_workspace = GitWorkspace.build(
+            installation_id=github_service.installation_id,
+            repository_name=github_service.repository_name,
+            token=github_service.get_installation_token(),
+        )
+
+        git_workspace.force_to_latest_main(
+            repo_url=github_service.get_repo_url(),
+        )
+        return build_codebase_tree(git_workspace.root_dir)
 
     async def handle_workspace_message(self, message: WorkspaceMessage):
         if message.kind != "workflow_code_report":
@@ -54,8 +67,9 @@ class WorkspaceManager:
             installation_id=github_info.installation_id,
             repository_name=github_info.repository_name,
         )
-        git_workspace = GitWorkspace(
-            root_dir=f"{settings.WORKSPACE_DIR}/{github_info.installation_id}/{github_info.repository_name}",
+        git_workspace = GitWorkspace.build(
+            installation_id=github_service.installation_id,
+            repository_name=github_service.repository_name,
             token=github_service.get_installation_token(),
         )
 

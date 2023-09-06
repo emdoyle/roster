@@ -2,7 +2,7 @@ import logging
 import os
 from pathlib import Path, PurePath
 
-from roster_api import constants
+from roster_api import constants, settings
 
 import git
 
@@ -21,6 +21,22 @@ class GitWorkspace:
         self.username = username
         self.password = password
         self.token = token
+
+    @classmethod
+    def build(
+        cls,
+        installation_id: int,
+        repository_name: str,
+        username: str = "",
+        password: str = "",
+        token: str = "",
+    ) -> "GitWorkspace":
+        return cls(
+            root_dir=f"{settings.WORKSPACE_DIR}/{installation_id}/{repository_name}",
+            username=username,
+            password=password,
+            token=token,
+        )
 
     @property
     def auth_env(self) -> dict[str, str]:
