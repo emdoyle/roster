@@ -2,7 +2,6 @@ import logging
 from typing import Optional
 
 from roster_api import constants, errors, settings
-from roster_api.models.workspace import GithubWorkspace
 
 from github import Auth, Github, GithubException
 

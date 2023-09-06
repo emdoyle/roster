@@ -26,6 +26,7 @@ build/
 
 # Manual test-related files
 test.py
+testing_*.py
 test_data/
 payload.json
 comment.json
