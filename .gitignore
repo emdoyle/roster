@@ -30,6 +30,7 @@ testing_*.py
 test_data/
 payload.json
 comment.json
+out.txt
 
 # Github App Private Key
 private_key.pem

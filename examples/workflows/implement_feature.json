@@ -39,7 +39,6 @@
       "role": "WebDeveloper",
       "action": "WriteCode",
       "inputMap": {
-        "requirements_document": "PRD.requirements_document",
         "codebase_tree": "workflow.codebase_tree",
         "implementation_plan": "PlanCode.implementation_plan"
       }

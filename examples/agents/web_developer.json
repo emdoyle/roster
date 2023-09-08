@@ -26,11 +26,15 @@
     },
     {
       "name": "WriteCode",
-      "description": "Write code to implement a feature based on a requirements document",
+      "description": "Write code within a codebase based on an implementation plan",
       "inputs": [
         {
           "type": "text",
-          "name": "requirements_document"
+          "name": "codebase_tree"
+        },
+        {
+          "type": "text",
+          "name": "implementation_plan"
         }
       ],
       "outputs": [
