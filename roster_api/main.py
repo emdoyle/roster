@@ -1,3 +1,6 @@
+<code>
+# This is the main file for the Roster API. It sets up and tears down the application, and handles routing. Enjoy! :)
+
 import asyncio
 import logging.handlers
 from contextlib import asynccontextmanager
@@ -39,7 +42,7 @@ def setup_logging():
         return
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_log_format = "%(levelname)s:\t [log] %(message)s"
+    console_log_format = "%(levelname)s:\\t [log] %(message)s"
     console_format = logging.Formatter(console_log_format)
     console_handler.setFormatter(console_format)
     logger.addHandler(console_handler)
@@ -124,3 +127,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+</code>
