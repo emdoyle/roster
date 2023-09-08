@@ -85,9 +85,11 @@ class RabbitMQClient:
         )
 
     async def publish(self, queue_name: str, message: str):
+        logger.debug("(rmq) Publishing to queue %s: %s", queue_name, message)
         await self._publish(queue_name, message.encode())
 
     async def publish_json(self, queue_name: str, message: dict):
+        logger.debug("(rmq) Publishing to queue %s: %s", queue_name, message)
         await self._publish(queue_name, json.dumps(message).encode())
 
     async def register_callback(self, queue_name: str, callback: callable):

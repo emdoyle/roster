@@ -38,6 +38,26 @@ class GitWorkspace:
             token=token,
         )
 
+    @classmethod
+    def setup(
+        cls,
+        installation_id: int,
+        repository_name: str,
+        repo_url: str,
+        username: str = "",
+        password: str = "",
+        token: str = "",
+    ):
+        workspace = cls.build(
+            installation_id=installation_id,
+            repository_name=repository_name,
+            username=username,
+            password=password,
+            token=token,
+        )
+        workspace.setup_repo(repo_url)
+        return workspace
+
     @property
     def auth_env(self) -> dict[str, str]:
         if self.token:
@@ -74,7 +94,7 @@ class GitWorkspace:
 
         git.Repo.clone_from(repo_url, str(self.root_dir), env=self.auth_env)
 
-    def force_to_latest_main(self, repo_url: str):
+    def setup_repo(self, repo_url: str):
         repo_dir = Path(self.root_dir)
 
         if not repo_dir.exists():
@@ -84,7 +104,7 @@ class GitWorkspace:
 
         # Verify current state of root_dir is OK if not empty
         try:
-            repo = git.Repo(str(self.root_dir))
+            git.Repo(str(self.root_dir))
             # disabling for now since remotes contain the access token
             # and fail checks against the unadorned https clone url
             # if repo.remotes.origin.url != repo_url:
@@ -101,6 +121,9 @@ class GitWorkspace:
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}")
 
+    def force_to_latest(self, branch: str = "main"):
+        repo = git.Repo(str(self.root_dir))
+
         # Fetch latest HEAD for origin/main
         try:
             origin = repo.remote(name="origin")
@@ -111,19 +134,15 @@ class GitWorkspace:
         # Forcefully remove all dirty state
         repo.git.reset("--hard", "HEAD")
         repo.git.clean("-fd")
-        logger.debug(
-            "(git-workspace) Removed all dirty git status from repo %s", repo_url
-        )
+        logger.debug("(git-workspace) Removed all dirty git status from repo")
 
-        # Switch to the main branch and reset to latest origin/main
+        # Switch to the branch and reset to latest origin
         try:
-            repo.git.checkout("main")
-            repo.git.reset("--hard", "origin/main")
-            logger.info(
-                "(git-workspace) Checked out latest origin/main for %s", repo_url
-            )
+            repo.git.checkout(branch)
+            repo.git.reset("--hard", f"origin/{branch}")
+            logger.info("(git-workspace) Checked out latest origin/%s", branch)
         except git.exc.GitCommandError as e:
-            raise ValueError(f"Failed to update to latest origin/main: {e}") from e
+            raise ValueError(f"Failed to update to latest origin/{branch}: {e}") from e
 
     def open(self, file: str, mode: str = "r", **kwargs):
         relative_file = PurePath(self.root_dir) / file
@@ -149,6 +168,18 @@ class GitWorkspace:
 
         repo.git.reset("--hard", "HEAD")
         repo.git.clean("-fd")
+
+    def checkout_sha(self, sha: str):
+        repo = git.Repo(str(self.root_dir))
+
+        try:
+            repo.git.checkout(sha)
+        except git.exc.GitCommandError as e:
+            raise ValueError(f"Failed to checkout SHA {sha}.") from e
+
+    def get_current_head_sha(self) -> str:
+        repo = git.Repo(str(self.root_dir))
+        return repo.head.commit.hexsha
 
     def commit(self, commit_msg: str):
         repo = git.Repo(str(self.root_dir))

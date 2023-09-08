@@ -66,6 +66,9 @@ class RosterGithubApp:
             logger.error("(roster-gha) Failed to parse issue title from payload")
             return
 
+        base_hash = await self.workspace_manager.get_base_hash(
+            github_service=github_service, branch="main"
+        )
         workspace = Workspace(
             name=f"issue-{issue_number}",
             kind="github",
@@ -73,6 +76,7 @@ class RosterGithubApp:
                 installation_id=github_service.installation_id,
                 repository_name=github_service.repository_name,
                 branch_name=f"issue-{issue_number}",
+                base_hash=base_hash,
             ),
         )
         WorkspaceService().update_or_create_workspace(workspace=workspace)
@@ -80,7 +84,7 @@ class RosterGithubApp:
             workflow_name="ImplementFeature",  # TODO: make this configurable
             inputs={
                 "feature_description": f"Title: {issue_title}\n\nRequest:\n{issue_body}",
-                "codebase_tree": self.workspace_manager.build_codebase_tree(
+                "codebase_tree": await self.workspace_manager.build_codebase_tree(
                     github_service=github_service
                 ),
             },

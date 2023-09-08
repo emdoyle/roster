@@ -55,6 +55,9 @@ class GithubWorkspace(BaseModel):
     branch_name: str = Field(
         description="The name of the branch which is being worked on"
     )
+    base_hash: str = Field(
+        description="The hash of the base commit for the branch which is being worked on"
+    )
 
     class Config:
         validate_assignment = True
@@ -63,6 +66,7 @@ class GithubWorkspace(BaseModel):
                 "installation_id": "1234",
                 "repository_name": "my-org/my-repo",
                 "branch_name": "my-branch",
+                "base_hash": "1234567890abcdef",
             }
         }
 
