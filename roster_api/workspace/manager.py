@@ -71,7 +71,6 @@ class WorkspaceManager:
 
         try:
             message_kind = message_data["kind"]
-            message_data = message_data["data"]
         except KeyError as e:
             logger.error("(workspace-mgr) Missing key in message: %s", e)
             return
@@ -86,7 +85,9 @@ class WorkspaceManager:
             else:
                 logger.debug("(workspace-mgr) Unknown message kind: %s", message_kind)
         except pydantic.ValidationError as e:
-            logger.error("(workspace-mgr) Failed to validate message: %s", e)
+            logger.error(
+                "(workspace-mgr) Failed to validate message: %s, %s", message_data, e
+            )
 
     async def handle_workspace_message(self, message: WorkspaceMessage):
         try:
@@ -176,9 +177,10 @@ class WorkspaceManager:
         # NOTE: input format is data={inputs: {record_id: ..., workflow: ..., filepaths: ...}}
         #   and output format is data={files: [{filename: ..., text: ..., metadata: ...}, ...]}
         try:
-            record_id = message.data["record_id"]
-            workflow = message.data["workflow"]
-            filepaths = message.data["filepaths"]
+            inputs = message.data["inputs"]
+            record_id = inputs["record_id"]
+            workflow = inputs["workflow"]
+            filepaths = inputs["filepaths"]
         except KeyError as e:
             logger.debug(
                 "(workspace-mgr) Missing key in workspace file reader message: %s", e

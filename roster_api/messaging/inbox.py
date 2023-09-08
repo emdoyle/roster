@@ -56,7 +56,11 @@ class AgentInbox:
         error: str = "",
     ):
         message = ToolMessage(
-            id=invocation_id, tool=tool, kind="tool_response", data=data, error=error
+            id=invocation_id,
+            tool=tool,
+            kind="tool_response",
+            data=data or {},
+            error=error,
         )
         logger.debug(
             "(agent-inbox) Sending tool response: %s %s %s %s",

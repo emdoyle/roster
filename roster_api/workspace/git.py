@@ -1,6 +1,8 @@
 import logging
 import os
+import subprocess
 from pathlib import Path, PurePath
+from shutil import rmtree
 
 from roster_api import constants, settings
 
@@ -62,64 +64,74 @@ class GitWorkspace:
     def auth_env(self) -> dict[str, str]:
         if self.token:
             return {
-                "GIT_ASKPASS": "echo",
-                "GIT_USERNAME": "x-access-token",
                 "GIT_PASSWORD": self.token,
             }
 
         return {
-            "GIT_ASKPASS": "echo",
-            "GIT_USERNAME": self.username,
             "GIT_PASSWORD": self.password,
         }
 
-    def clone_repo(
-        self,
-        repo_url: str,
-        overwrite_existing_dir: bool = False,
-    ):
-        repo_dir = Path(self.root_dir)
+    def setup_credentials(self, repo_url: str):
+        subprocess.run(
+            [
+                "git",
+                "config",
+                "--global",
+                f"credential.{repo_url}.username",
+                self.username or "x-access-token",
+            ],
+            cwd=str(self.root_dir),
+        )
+        subprocess.run(
+            [
+                "git",
+                "config",
+                "--global",
+                "credential.helper",
+                '!f() { echo "password=$GIT_PASSWORD"; }; f',
+            ],
+            cwd=str(self.root_dir),
+        )
 
-        # Check if directory already exists
-        if repo_dir.is_dir():
-            if overwrite_existing_dir:
-                # Remove existing directory if overwrite is allowed
+    def clone_repo(self, repo_url: str):
+        git.Repo.clone_from(repo_url, str(self.root_dir), env=self.auth_env)
+
+    def clean_repo_dir(self, repo_dir: Path, repo_url: str) -> bool:
+        # If the directory doesn't exist, create it
+        if not repo_dir.exists():
+            repo_dir.mkdir(parents=True, exist_ok=True)
+            return False
+
+        # Verify current state of root_dir is OK if not empty
+        try:
+            repo = git.Repo(str(self.root_dir))
+            if repo.remote().url != repo_url:
+                raise ValueError("Directory contains a different git repository.")
+            # If we reach this point, the repo is OK
+            return True
+        except (ValueError, git.exc.InvalidGitRepositoryError):
+            # The directory exists, but it doesn't contain a git repo
+            # So we clear the directory
+            if repo_dir.is_dir():
                 for item in repo_dir.iterdir():
                     if item.is_file():
                         item.unlink()
                     else:
-                        os.rmdir(item)
+                        rmtree(str(item))
+                return False
             else:
-                raise FileExistsError(f"Directory {self.root_dir} already exists.")
-
-        git.Repo.clone_from(repo_url, str(self.root_dir), env=self.auth_env)
+                raise FileExistsError(
+                    f"Directory {self.root_dir} already exists (as a file)."
+                )
+        except Exception as e:
+            raise ValueError(f"An unexpected error occurred: {e}")
 
     def setup_repo(self, repo_url: str):
         repo_dir = Path(self.root_dir)
-
-        if not repo_dir.exists():
+        repo_exists = self.clean_repo_dir(repo_dir, repo_url)
+        self.setup_credentials(repo_url)
+        if not repo_exists:
             self.clone_repo(repo_url)
-            logger.info("(git-workspace) Cloned new repository from %s.", repo_url)
-            return
-
-        # Verify current state of root_dir is OK if not empty
-        try:
-            git.Repo(str(self.root_dir))
-            # disabling for now since remotes contain the access token
-            # and fail checks against the unadorned https clone url
-            # if repo.remotes.origin.url != repo_url:
-            #     raise ValueError("Directory contains a different git repository.")
-        except git.exc.InvalidGitRepositoryError:
-            raise ValueError("Directory exists but is not a valid git repository.")
-        except git.exc.NoSuchPathError:
-            self.clone_repo(repo_url)
-            logger.info(
-                "(git-workspace) Directory was empty, cloned new repository from %s.",
-                repo_url,
-            )
-            return
-        except Exception as e:
-            raise ValueError(f"An unexpected error occurred: {e}")
 
     def force_to_latest(self, branch: str = "main"):
         repo = git.Repo(str(self.root_dir))
