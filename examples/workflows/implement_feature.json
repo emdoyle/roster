@@ -6,7 +6,7 @@
   "inputs": [
     {
       "type": "text",
-      "name": "feature_description"
+      "name": "change_request"
     },
     {
       "type": "text",
@@ -20,18 +20,11 @@
     }
   ],
   "steps": {
-    "PRD": {
-      "role": "ProductManager",
-      "action": "DistillFeatureRequirements",
-      "inputMap": {
-        "customer_requests": "workflow.feature_description"
-      }
-    },
     "PlanCode": {
       "role": "WebDeveloper",
       "action": "PlanCodeChanges",
       "inputMap": {
-        "requirements_document": "PRD.requirements_document",
+        "change_request": "workflow.change_request",
         "codebase_tree": "workflow.codebase_tree"
       }
     },
@@ -39,7 +32,6 @@
       "role": "WebDeveloper",
       "action": "WriteCode",
       "inputMap": {
-        "codebase_tree": "workflow.codebase_tree",
         "implementation_plan": "PlanCode.implementation_plan"
       }
     },
@@ -48,7 +40,7 @@
       "action": "RefineCode",
       "inputMap": {
         "code": "WriteCode.code",
-        "requirements_document": "PRD.requirements_document",
+        "change_request": "workflow.change_request",
         "implementation_plan": "PlanCode.implementation_plan"
       },
       "outputMap": {

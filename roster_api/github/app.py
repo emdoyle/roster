@@ -83,7 +83,7 @@ class RosterGithubApp:
         await WorkflowService().initiate_workflow(
             workflow_name="ImplementFeature",  # TODO: make this configurable
             inputs={
-                "feature_description": f"Title: {issue_title}\n\nRequest:\n{issue_body}",
+                "change_request": f"Title: {issue_title}\n\nRequest:\n{issue_body}",
                 "codebase_tree": await self.workspace_manager.build_codebase_tree(
                     github_service=github_service
                 ),
