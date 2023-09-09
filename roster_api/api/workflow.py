@@ -1,3 +1,4 @@
+
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -31,7 +32,7 @@ def get_workflow(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/workflows/{name}", tags=["WorkflowResource"])
+@router.patch("/workflows", tags=["WorkflowResource"])
 def update_workflow(workflow: WorkflowSpec):
     try:
         return WorkflowService().update_workflow(workflow)

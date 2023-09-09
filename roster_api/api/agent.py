@@ -1,3 +1,4 @@
+
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -31,7 +32,7 @@ def get_agent(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/agents/{name}", tags=["AgentResource"])
+@router.patch("/agents", tags=["AgentResource"])
 def update_agent(agent: AgentSpec):
     try:
         return AgentService().update_agent(agent)

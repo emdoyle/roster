@@ -1,3 +1,4 @@
+
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -31,7 +32,7 @@ def get_team(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/teams/{name}", tags=["TeamResource"])
+@router.patch("/teams", tags=["TeamResource"])
 def update_team(team: TeamSpec):
     try:
         return TeamService().update_team(team)

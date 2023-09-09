@@ -1,3 +1,4 @@
+
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -31,7 +32,7 @@ def get_identity(name: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch("/identities/{name}", tags=["IdentityResource"])
+@router.patch("/identities", tags=["IdentityResource"])
 def update_identity(identity: IdentitySpec):
     try:
         return IdentityService().update_identity(identity)
