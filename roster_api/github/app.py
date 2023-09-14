@@ -1,3 +1,4 @@
+
 import json
 import logging
 from typing import Optional
@@ -83,7 +84,7 @@ class RosterGithubApp:
         await WorkflowService().initiate_workflow(
             workflow_name="ImplementFeature",  # TODO: make this configurable
             inputs={
-                "feature_description": f"Title: {issue_title}\n\nRequest:\n{issue_body}",
+                "feature_description": f"Title: {issue_title}\\n\\nRequest:\\n{issue_body}",
                 "codebase_tree": await self.workspace_manager.build_codebase_tree(
                     github_service=github_service
                 ),
@@ -94,6 +95,8 @@ class RosterGithubApp:
 
     async def handle_issue_comment(self, github_service: GithubService, payload: dict):
         await github_service.handle_issue_comment(payload=payload)
+        issue_number = payload["issue"]["number"]
+        await github_service.leave_comment(issue_number, "Feedback has been received.")
 
     # NOTE: probably makes sense to push the finish event handling logic
     #   into the WorkspaceManager
