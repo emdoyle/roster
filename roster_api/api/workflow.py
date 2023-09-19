@@ -1,9 +1,11 @@
+
 import logging
 
 from fastapi import APIRouter, HTTPException
 from roster_api import constants, errors
 from roster_api.models.workflow import WorkflowSpec
 from roster_api.services.workflow import WorkflowService
+from roster_api.services.workflow_record import WorkflowRecordService
 
 router = APIRouter()
 
@@ -29,6 +31,19 @@ def get_workflow(name: str):
         return WorkflowService().get_workflow(name)
     except errors.WorkflowNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
+
+
+@router.get("/workflowrecords/{id}", tags=["WorkflowRecordResource"])
+def get_workflow_record(id: str):
+    try:
+        return WorkflowRecordService().get_record(id)
+    except errors.WorkflowRecordNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.message)
+
+
+@router.get("/workflowrecords", tags=["WorkflowRecordResource"])
+def list_workflow_records():
+    return WorkflowRecordService().list_records()
 
 
 @router.patch("/workflows/{name}", tags=["WorkflowResource"])
