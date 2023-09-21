@@ -7,7 +7,12 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.db.etcd import get_etcd_client
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
-from roster_api.models.workflow import WorkflowRecord, WorkflowResource, WorkflowSpec
+from roster_api.models.workflow import (
+    WorkflowDerivedState,
+    WorkflowRecord,
+    WorkflowResource,
+    WorkflowSpec,
+)
 from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -67,6 +72,7 @@ class WorkflowService:
         workflow_key = self._get_workflow_key(workflow.name, namespace)
         workflow_resource = self.get_workflow(workflow.name, namespace)
         workflow_resource.spec = workflow
+        workflow_resource.derived = WorkflowDerivedState.build(workflow)
         self.etcd_client.put(workflow_key, serialize(workflow_resource))
         logger.debug("Updated Workflow %s.", workflow.name)
         return workflow_resource

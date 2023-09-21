@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, constr
 from roster_api import constants
 from roster_api.models.base import RosterResource
 from roster_api.models.common import TypedArgument
+from roster_api.util.graph_ops import sort_dependencies
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 
@@ -54,6 +55,19 @@ class WorkflowStep(BaseModel):
             }
         }
 
+    def get_dependencies(self) -> set[str]:
+        deps = set()
+        for dep_name in self.inputMap.values():
+            # TODO: factor workflow variable namespacing into shared utility
+            try:
+                dep_step_name = dep_name.split(".")[0]
+            except IndexError:
+                raise ValueError(f"Could not parse step dependencies for step: {self}")
+            if dep_step_name == "workflow":
+                continue
+            deps.add(dep_step_name)
+        return deps
+
 
 class WorkflowSpec(BaseModel):
     name: str = Field(description="A name to identify the workflow.")
@@ -91,6 +105,12 @@ class WorkflowSpec(BaseModel):
             }
         }
 
+    def get_dependency_graph(self) -> dict[str, set[str]]:
+        workflow_graph = {}
+        for step_name, step in self.steps.items():
+            workflow_graph[step_name] = step.get_dependencies()
+        return workflow_graph
+
 
 class WorkflowStatus(BaseModel):
     name: str = Field(description="A name to identify the workflow.")
@@ -106,25 +126,53 @@ class WorkflowStatus(BaseModel):
         }
 
 
+class WorkflowDerivedState(BaseModel):
+    sorted_steps: list[str] = Field(
+        default_factory=list, description="The sorted order of steps in the workflow."
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "sorted_steps": ["step1", "step2"],
+            }
+        }
+
+    @classmethod
+    def build(cls, spec: WorkflowSpec) -> "WorkflowDerivedState":
+        return cls(sorted_steps=sort_dependencies(spec.get_dependency_graph()))
+
+
 class WorkflowResource(RosterResource):
     kind: constr(regex="^Workflow$") = Field(
         default="Workflow", description="The kind of resource."
     )
     spec: WorkflowSpec = Field(description="The specification of the workflow.")
     status: WorkflowStatus = Field(description="The status of the workflow.")
+    derived: WorkflowDerivedState = Field(
+        default_factory=WorkflowDerivedState,
+        description="Derived state about the workflow (ex: sorted order of steps)",
+    )
 
     class Config:
         validate_assignment = True
         schema_extra = {
             "example": {
+                "kind": "Workflow",
                 "spec": WorkflowSpec.Config.schema_extra["example"],
                 "status": WorkflowStatus.Config.schema_extra["example"],
+                "derived": WorkflowDerivedState.Config.schema_extra["example"],
             }
         }
 
     @classmethod
     def initial_state(cls, spec: WorkflowSpec) -> "WorkflowResource":
-        return cls(spec=spec, status=WorkflowStatus(name=spec.name))
+        return cls(
+            spec=spec,
+            status=WorkflowStatus(name=spec.name),
+            derived=WorkflowDerivedState.build(spec=spec),
+        )
 
 
 class InitiateWorkflowArgs(BaseModel):
