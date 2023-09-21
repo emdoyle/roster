@@ -11,9 +11,9 @@ RUN apt-get update \
 
 # Download and extract ctags binary
 RUN wget -O ctags.tar.xz https://github.com/universal-ctags/ctags-nightly-build/releases/download/2023.09.07%2Bf7e27b4521d7dcc0b80f9f787055b53524fb95a6/uctags-2023.09.07-linux-x86_64.tar.xz \
-    && tar -xf ctags.tar.xz -C /usr/local/bin/ \
-    && rm ctags.tar.xz \
-# archive contains a directory with bin/ctags, need to put this in /usr/local/bin
+    && tar -xf ctags.tar.xz \
+    && mv uctags-2023.09.07-linux-x86_64/bin/ctags /usr/local/bin/ \
+    && rm -r uctags-2023.09.07-linux-x86_64 ctags.tar.xz
 
 RUN pip install poetry
 
