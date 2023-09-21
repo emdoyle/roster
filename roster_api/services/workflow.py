@@ -105,10 +105,13 @@ class WorkflowRecordService:
     def __init__(self, etcd_client: Optional[etcd3.Etcd3Client] = None):
         self.etcd_client: etcd3.Etcd3Client = etcd_client or get_etcd_client()
 
+    def _get_base_key(self, namespace: str = DEFAULT_NAMESPACE) -> str:
+        return f"{self.KEY_PREFIX}/{namespace}"
+
     def _get_workflow_key(
         self, workflow_name: str, namespace: str = DEFAULT_NAMESPACE
     ) -> str:
-        return f"{self.KEY_PREFIX}/{namespace}/{workflow_name}"
+        return f"{self._get_base_key(namespace=namespace)}/{workflow_name}"
 
     def _get_record_key(
         self, workflow_name: str, record_id: str, namespace: str = DEFAULT_NAMESPACE
@@ -150,6 +153,10 @@ class WorkflowRecordService:
     def get_workflow_record(
         self, workflow_name: str, record_id: str, namespace: str = DEFAULT_NAMESPACE
     ) -> WorkflowRecord:
+        # TODO: should allow retrieving by record_id alone.
+        #  a principled approach to retrieving efficiently by ID alone could be to maintain
+        #  an in-memory index of ID to name
+        #  which is built on startup and maintained via etcd watcher/informer mechanisms
         record_key = self._get_record_key(workflow_name, record_id, namespace=namespace)
         record_data, _ = self.etcd_client.get(record_key)
         if not record_data:
@@ -159,9 +166,12 @@ class WorkflowRecordService:
         return deserialize_from_etcd(WorkflowRecord, record_data)
 
     def list_workflow_records(
-        self, workflow_name: str, namespace: str = DEFAULT_NAMESPACE
+        self, workflow_name: str = "", namespace: str = DEFAULT_NAMESPACE
     ) -> list[WorkflowRecord]:
-        workflow_key = self._get_workflow_key(workflow_name, namespace=namespace)
+        if workflow_name:
+            workflow_key = self._get_workflow_key(workflow_name, namespace=namespace)
+        else:
+            workflow_key = self._get_base_key(namespace=namespace)
         workflow_record_data = self.etcd_client.get_prefix(workflow_key)
         return [
             deserialize_from_etcd(WorkflowRecord, data)

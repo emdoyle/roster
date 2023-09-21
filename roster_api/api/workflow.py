@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from roster_api import constants, errors
 from roster_api.models.workflow import WorkflowSpec
-from roster_api.services.workflow import WorkflowService
+from roster_api.services.workflow import WorkflowRecordService, WorkflowService
 
 router = APIRouter()
 
@@ -45,3 +45,18 @@ def delete_workflow(name: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Workflow not found")
     return deleted
+
+
+@router.get("/workflow-records", tags=["WorkflowRecord"])
+def list_workflow_records(workflow_name: str = ""):
+    return WorkflowRecordService().list_workflow_records(workflow_name=workflow_name)
+
+
+@router.get("/workflow-records/{name}/{id}", tags=["WorkflowRecord"])
+def get_workflow_record(name: str, id: str):
+    try:
+        return WorkflowRecordService().get_workflow_record(
+            workflow_name=name, record_id=id
+        )
+    except errors.WorkflowRecordNotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.message)
