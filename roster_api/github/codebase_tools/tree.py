@@ -49,6 +49,13 @@ class CtagFileTreeGenerator:
         }
 
     @staticmethod
+    # 'ctags' is a programming tool that generates an index (or tag) file of names found in source and header files of various programming languages.
+    # The flags and options used here are:
+    # '-R' : Recurse into directories supplied on the command line.
+    # '--fields=+KSns-P' : Include specified extension fields to the output.
+    # '--fields-python=+{decorators}' : Include python specific 'decorators' field to the output.
+    # '--kinds-python=+cfm' : Include python specific kinds 'c', 'f', and 'm' to the output.
+    # '--output-format=json' : Use json as the output format.
     def generate_ctags(repo_path: str) -> str:
         try:
             result = subprocess.run(
@@ -171,4 +178,4 @@ class CtagFileTreeGenerator:
         for file, tags in sorted(tree.items()):
             lines.append(f"{file}:")
             lines.extend(self.tag_lines(tags))
-        return "\n".join(lines)
+        return "\\n".join(lines)
