@@ -106,7 +106,7 @@ class RosterGithubApp:
             )
             return
         workspace = workspace_service.get_workspace(event.workflow_record.workspace)
-        workflow_outputs = event.workflow.spec.outputs
+        workflow_outputs = event.workflow_record.spec.outputs
 
         code_output_keys = [
             output.name for output in workflow_outputs if output.type == "code"
@@ -134,7 +134,7 @@ class RosterGithubApp:
                 continue
 
         code_report_payload = WorkflowCodeReportPayload(
-            workflow_name=event.workflow.spec.name,
+            workflow_name=event.workflow_record.name,
             workflow_record=event.workflow_record.id,
             code_outputs=code_outputs,
         )

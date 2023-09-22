@@ -16,7 +16,6 @@ from roster_api.models.workflow import (
     WorkflowFinishEvent,
     WorkflowMessage,
     WorkflowRecord,
-    WorkflowResource,
     WorkflowSpec,
     WorkflowStartEvent,
     WorkflowStep,
@@ -75,11 +74,11 @@ class WorkflowRouter:
 
     async def _trigger_action(
         self,
-        workflow_spec: WorkflowSpec,
         workflow_record: WorkflowRecord,
         step: str,
         step_details: WorkflowStep,
     ):
+        workflow_spec = workflow_record.spec
         # Retrieve the TeamResource associated with this Workflow
         # WARNING: default namespace
         try:
@@ -113,21 +112,7 @@ class WorkflowRouter:
     async def _handle_initiate_workflow(
         self, message: WorkflowMessage, payload: InitiateWorkflowPayload
     ):
-        try:
-            workflow_record = WorkflowRecordService().create_workflow_record(
-                message.workflow,
-                inputs=payload.inputs,
-                workspace_name=payload.workspace,
-            )
-        except errors.WorkflowRecordAlreadyExistsError:
-            logger.debug("(workflow-router) Workflow record already exists")
-            logger.warning(
-                "Tried to initiate workflow %s with inputs %s, but record already exists",
-                message.workflow,
-                payload.inputs,
-            )
-            return
-
+        # TODO: use some kind of version number to handle potential stale WorkflowRecord.spec
         workflow_resource = WorkflowService().get_workflow(message.workflow)
         workflow_spec = workflow_resource.spec
 
@@ -141,14 +126,29 @@ class WorkflowRouter:
             )
             return
 
+        # Create a WorkflowRecord to hold state on this workflow execution
+        try:
+            workflow_record = WorkflowRecordService().create_workflow_record(
+                workflow_spec=workflow_spec,
+                inputs=payload.inputs,
+                workspace_name=payload.workspace,
+            )
+        except errors.WorkflowRecordAlreadyExistsError:
+            logger.debug("(workflow-router) Workflow record already exists")
+            logger.warning(
+                "Tried to initiate workflow %s with inputs %s, but record already exists",
+                message.workflow,
+                payload.inputs,
+            )
+            return
+
+        workflow_spec_snapshot = workflow_record.spec
         # Notify listeners that the workflow has started
         asyncio.create_task(
-            self._notify_workflow_started(
-                workflow=workflow_resource, workflow_record=workflow_record
-            )
+            self._notify_workflow_started(workflow_record=workflow_record)
         )
 
-        for step_name, step_details in workflow_spec.steps.items():
+        for step_name, step_details in workflow_spec_snapshot.steps.items():
             # If all dependencies are satisfied, trigger the action
             if all(
                 [
@@ -162,7 +162,6 @@ class WorkflowRouter:
                     step_details.action,
                 )
                 await self._trigger_action(
-                    workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
                     step=step_name,
                     step_details=step_details,
@@ -185,18 +184,7 @@ class WorkflowRouter:
             )
             return
 
-        try:
-            workflow_resource = WorkflowService().get_workflow(message.workflow)
-        except errors.WorkflowNotFoundError:
-            logger.debug("(workflow-router) Workflow not found")
-            logger.warning(
-                "Tried to handle action report %s for workflow %s / %s, but workflow not found",
-                payload.action,
-                message.workflow,
-                message.id,
-            )
-            return
-        workflow_spec = workflow_resource.spec
+        workflow_spec = workflow_record.spec
         try:
             output_map = workflow_spec.steps[payload.step].outputMap
         except KeyError:
@@ -254,9 +242,7 @@ class WorkflowRouter:
             == required_outputs
         ):
             asyncio.create_task(
-                self._notify_workflow_finished(
-                    workflow=workflow_resource, workflow_record=workflow_record
-                )
+                self._notify_workflow_finished(workflow_record=workflow_record)
             )
             return
 
@@ -280,7 +266,6 @@ class WorkflowRouter:
             if step_run_status.runs == 0:
                 # If the action hasn't been triggered yet, trigger it
                 await self._trigger_action(
-                    workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
                     step=step_name,
                     step_details=step_details,
@@ -289,22 +274,15 @@ class WorkflowRouter:
                 # If the action errored, and we haven't reached the max number of retries,
                 # trigger the action again
                 await self._trigger_action(
-                    workflow_spec=workflow_spec,
                     workflow_record=workflow_record,
                     step=step_name,
                     step_details=step_details,
                 )
 
-    async def _notify_workflow_started(
-        self, workflow: WorkflowResource, workflow_record: WorkflowRecord
-    ):
+    async def _notify_workflow_started(self, workflow_record: WorkflowRecord):
         results = await asyncio.gather(
             *[
-                listener(
-                    WorkflowStartEvent(
-                        workflow=workflow, workflow_record=workflow_record
-                    )
-                )
+                listener(WorkflowStartEvent(workflow_record=workflow_record))
                 for listener in self.workflow_start_listeners
             ],
             return_exceptions=True,
@@ -317,16 +295,10 @@ class WorkflowRouter:
                     result,
                 )
 
-    async def _notify_workflow_finished(
-        self, workflow: WorkflowResource, workflow_record: WorkflowRecord
-    ):
+    async def _notify_workflow_finished(self, workflow_record: WorkflowRecord):
         results = await asyncio.gather(
             *[
-                listener(
-                    WorkflowFinishEvent(
-                        workflow=workflow, workflow_record=workflow_record
-                    )
-                )
+                listener(WorkflowFinishEvent(workflow_record=workflow_record))
                 for listener in self.workflow_finish_listeners
             ],
             return_exceptions=True,

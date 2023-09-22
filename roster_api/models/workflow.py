@@ -348,6 +348,9 @@ class WorkflowRecord(BaseModel):
         description="An identifier for the execution of the workflow.",
     )
     name: str = Field(description="The name of the workflow.")
+    spec: WorkflowSpec = Field(
+        description="The spec of the workflow at the time it was initiated."
+    )
     workspace: str = Field(
         default="", description="The name of the associated workspace (if any)."
     )
@@ -385,10 +388,8 @@ class WorkflowRecord(BaseModel):
 
 # TODO: narrow these to specific fields?
 class WorkflowStartEvent(BaseModel):
-    workflow: WorkflowResource
     workflow_record: WorkflowRecord
 
 
 class WorkflowFinishEvent(BaseModel):
-    workflow: WorkflowResource
     workflow_record: WorkflowRecord

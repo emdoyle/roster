@@ -128,7 +128,7 @@ class WorkflowRecordService:
 
     def create_workflow_record(
         self,
-        workflow_name: str,
+        workflow_spec: WorkflowSpec,
         inputs: Optional[dict] = None,
         workspace_name: str = "",
         namespace: str = DEFAULT_NAMESPACE,
@@ -138,8 +138,12 @@ class WorkflowRecordService:
             f"workflow.{input_key}": input_value
             for input_key, input_value in inputs.items()
         }
+        workflow_name = workflow_spec.name
         workflow_record = WorkflowRecord(
-            name=workflow_name, context=context, workspace=workspace_name
+            name=workflow_name,
+            spec=workflow_spec,
+            context=context,
+            workspace=workspace_name,
         )
         record_key = self._get_record_key(
             workflow_name, workflow_record.id, namespace=namespace
