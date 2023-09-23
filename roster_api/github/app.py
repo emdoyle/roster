@@ -115,7 +115,7 @@ class RosterGithubApp:
         for code_output_key in code_output_keys:
             try:
                 code_output_payload = json.loads(
-                    event.workflow_record.outputs[code_output_key]
+                    event.workflow_record.outputs[code_output_key].value
                 )
                 # We transparently support CodeOutput[] or CodeOutput for the declared 'code' data type
                 if isinstance(code_output_payload, list):

@@ -5,7 +5,7 @@ from typing import ClassVar
 from pydantic import BaseModel, Field, constr
 from roster_api import constants
 from roster_api.models.base import RosterResource
-from roster_api.models.common import TypedArgument
+from roster_api.models.common import TypedArgument, TypedResult
 from roster_api.util.graph_ops import sort_dependencies
 
 logger = logging.getLogger(constants.LOGGER_NAME)
@@ -214,7 +214,7 @@ class WorkflowActionReportPayload(BaseModel):
         description="The name of the Step reporting outputs in this payload."
     )
     action: str = Field(description="The name of the Action which was run.")
-    outputs: dict[str, str] = Field(
+    outputs: dict[str, TypedResult] = Field(
         default_factory=dict, description="The outputs of the Action being reported."
     )
     error: str = Field(
@@ -228,7 +228,10 @@ class WorkflowActionReportPayload(BaseModel):
             "example": {
                 "step": "StepName",
                 "action": "ActionName",
-                "outputs": {"output1": "value1", "output2": "value2"},
+                "outputs": {
+                    "output1": {"type": "text", "value": "value1"},
+                    "output2": {"type": "text", "value": "value2"},
+                },
                 "error": "",
             }
         }
@@ -300,7 +303,7 @@ class WorkflowMessage(BaseModel):
 
 
 class StepResult(BaseModel):
-    outputs: dict[str, str] = Field(
+    outputs: dict[str, TypedResult] = Field(
         default_factory=dict,
         description="The outputs of the action run.",
     )
@@ -313,7 +316,10 @@ class StepResult(BaseModel):
         validate_assignment = True
         schema_extra = {
             "example": {
-                "outputs": {"output1": "value1", "output2": "value2"},
+                "outputs": {
+                    "output1": {"type": "text", "value": "value1"},
+                    "output2": {"type": "text", "value": "value2"},
+                },
                 "error": "",
             }
         }
@@ -354,13 +360,13 @@ class WorkflowRecord(BaseModel):
     workspace: str = Field(
         default="", description="The name of the associated workspace (if any)."
     )
-    outputs: dict[str, str] = Field(
+    outputs: dict[str, TypedResult] = Field(
         default_factory=dict, description="The final outputs of the workflow."
     )
     errors: dict[str, str] = Field(
         default_factory=dict, description="The final errors of the workflow."
     )
-    context: dict[str, str] = Field(
+    context: dict[str, TypedResult] = Field(
         default_factory=dict,
         description="The context (available values) of the workflow.",
     )
@@ -376,9 +382,15 @@ class WorkflowRecord(BaseModel):
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "WorkflowName",
                 "workspace": "my-branch-workspace",
-                "outputs": {"output1": "value1", "output2": "value2"},
+                "outputs": {
+                    "output1": {"type": "text", "value": "value1"},
+                    "output2": {"type": "text", "value": "value2"},
+                },
                 "error": "",
-                "context": {"input1": "value1", "input2": "value2"},
+                "context": {
+                    "ctx1": {"type": "text", "value": "value1"},
+                    "ctx2": {"type": "text", "value": "value2"},
+                },
                 "run_status": {
                     "ActionName": StepRunStatus.Config.schema_extra["example"],
                 },

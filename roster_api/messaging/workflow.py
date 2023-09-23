@@ -100,7 +100,8 @@ class WorkflowRouter:
             step=step,
             action=step_details.action,
             inputs={
-                k: workflow_record.context[v] for k, v in step_details.inputMap.items()
+                k: workflow_record.context[v].value
+                for k, v in step_details.inputMap.items()
             },
             role_context=team_resource.get_role_description(step_details.role),
         )
