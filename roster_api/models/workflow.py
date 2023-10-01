@@ -69,6 +69,24 @@ class WorkflowStep(BaseModel):
         return deps
 
 
+class WorkflowDerivedState(BaseModel):
+    sorted_steps: list[str] = Field(
+        default_factory=list, description="The sorted order of steps in the workflow."
+    )
+
+    class Config:
+        validate_assignment = True
+        schema_extra = {
+            "example": {
+                "sorted_steps": ["step1", "step2"],
+            }
+        }
+
+    @classmethod
+    def build(cls, spec: "WorkflowSpec") -> "WorkflowDerivedState":
+        return cls(sorted_steps=sort_dependencies(spec.get_dependency_graph()))
+
+
 class WorkflowSpec(BaseModel):
     name: str = Field(description="A name to identify the workflow.")
     description: str = Field(description="A description of the workflow.")
@@ -81,6 +99,10 @@ class WorkflowSpec(BaseModel):
     )
     steps: dict[str, WorkflowStep] = Field(
         default_factory=dict, description="The steps in the workflow."
+    )
+    derived_state: WorkflowDerivedState = Field(
+        default_factory=WorkflowDerivedState,
+        description="The derived state from the workflow spec.",
     )
 
     class Config:
@@ -102,8 +124,12 @@ class WorkflowSpec(BaseModel):
                     "step1": WorkflowStep.Config.schema_extra["example"],
                     "step2": WorkflowStep.Config.schema_extra["example"],
                 },
+                "derived_state": WorkflowDerivedState.Config.schema_extra["example"],
             }
         }
+
+    def update_derived_state(self):
+        self.derived_state = WorkflowDerivedState.build(spec=self)
 
     def get_dependency_graph(self) -> dict[str, set[str]]:
         workflow_graph = {}
@@ -126,34 +152,12 @@ class WorkflowStatus(BaseModel):
         }
 
 
-class WorkflowDerivedState(BaseModel):
-    sorted_steps: list[str] = Field(
-        default_factory=list, description="The sorted order of steps in the workflow."
-    )
-
-    class Config:
-        validate_assignment = True
-        schema_extra = {
-            "example": {
-                "sorted_steps": ["step1", "step2"],
-            }
-        }
-
-    @classmethod
-    def build(cls, spec: WorkflowSpec) -> "WorkflowDerivedState":
-        return cls(sorted_steps=sort_dependencies(spec.get_dependency_graph()))
-
-
 class WorkflowResource(RosterResource):
     kind: constr(regex="^Workflow$") = Field(
         default="Workflow", description="The kind of resource."
     )
     spec: WorkflowSpec = Field(description="The specification of the workflow.")
     status: WorkflowStatus = Field(description="The status of the workflow.")
-    derived: WorkflowDerivedState = Field(
-        default_factory=WorkflowDerivedState,
-        description="Derived state about the workflow (ex: sorted order of steps)",
-    )
 
     class Config:
         validate_assignment = True
@@ -162,7 +166,6 @@ class WorkflowResource(RosterResource):
                 "kind": "Workflow",
                 "spec": WorkflowSpec.Config.schema_extra["example"],
                 "status": WorkflowStatus.Config.schema_extra["example"],
-                "derived": WorkflowDerivedState.Config.schema_extra["example"],
             }
         }
 
@@ -171,7 +174,6 @@ class WorkflowResource(RosterResource):
         return cls(
             spec=spec,
             status=WorkflowStatus(name=spec.name),
-            derived=WorkflowDerivedState.build(spec=spec),
         )
 
 
@@ -381,6 +383,7 @@ class WorkflowRecord(BaseModel):
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "WorkflowName",
+                "spec": WorkflowSpec.Config.schema_extra["example"],
                 "workspace": "my-branch-workspace",
                 "outputs": {
                     "output1": {"type": "text", "value": "value1"},

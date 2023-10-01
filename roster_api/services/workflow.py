@@ -40,6 +40,7 @@ class WorkflowService:
         self, workflow: WorkflowSpec, namespace: str = DEFAULT_NAMESPACE
     ) -> WorkflowResource:
         workflow_key = self._get_workflow_key(workflow.name, namespace)
+        workflow.update_derived_state()
         workflow_resource = WorkflowResource.initial_state(spec=workflow)
         created = self.etcd_client.put_if_not_exists(
             workflow_key, serialize(workflow_resource)
@@ -71,9 +72,9 @@ class WorkflowService:
         self, workflow: WorkflowSpec, namespace: str = DEFAULT_NAMESPACE
     ) -> WorkflowResource:
         workflow_key = self._get_workflow_key(workflow.name, namespace)
+        workflow.update_derived_state()
         workflow_resource = self.get_workflow(workflow.name, namespace)
         workflow_resource.spec = workflow
-        workflow_resource.derived = WorkflowDerivedState.build(workflow)
         self.etcd_client.put(workflow_key, serialize(workflow_resource))
         logger.debug("Updated Workflow %s.", workflow.name)
         return workflow_resource
