@@ -7,6 +7,7 @@ from roster_api import constants, errors
 from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.db.etcd import get_etcd_client
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
+from roster_api.models.common import TypedResult
 from roster_api.models.workflow import (
     WorkflowDerivedState,
     WorkflowRecord,
@@ -135,8 +136,10 @@ class WorkflowRecordService:
     ) -> WorkflowRecord:
         # NOTE: implied that inputs are validated, might want to move that here
         context = {
-            f"workflow.{input_key}": input_value
-            for input_key, input_value in inputs.items()
+            f"workflow.{input_signature.name}": TypedResult(
+                type=input_signature.type, value=inputs[input_signature.name]
+            )
+            for input_signature in workflow_spec.inputs
         }
         workflow_name = workflow_spec.name
         workflow_record = WorkflowRecord(
@@ -183,6 +186,7 @@ class WorkflowRecordService:
         else:
             workflow_key = self._get_base_key(namespace=namespace)
         workflow_record_data = self.etcd_client.get_prefix(workflow_key)
+
         return [
             deserialize_from_etcd(WorkflowRecord, data)
             for data, _ in workflow_record_data
