@@ -60,3 +60,13 @@ def get_workflow_record(name: str, id: str):
         )
     except errors.WorkflowRecordNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
+
+
+@router.delete("/workflow-records/{name}/{id}", tags=["WorkflowRecord"])
+def delete_workflow_record(name: str, id: str):
+    deleted = WorkflowRecordService().delete_workflow_record(
+        workflow_name=name, record_id=id
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    return deleted
