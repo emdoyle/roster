@@ -34,3 +34,7 @@ out.txt
 
 # Github App Private Key
 private_key.pem
+
+
+# Qdrant vector DB
+qdrant_storage/

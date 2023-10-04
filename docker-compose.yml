@@ -51,3 +51,9 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+  Qdrant:
+    image: "qdrant/qdrant:latest"
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
