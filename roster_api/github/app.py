@@ -111,6 +111,14 @@ class RosterGithubApp:
         code_output_keys = [
             output.name for output in workflow_outputs if output.type == "code"
         ]
+
+        if not code_output_keys:
+            logger.debug(
+                "(roster-gha) Finished workflow (%s) has no code outputs",
+                event.workflow_record.id,
+            )
+            return
+
         code_outputs = []
         for code_output_key in code_output_keys:
             try:
