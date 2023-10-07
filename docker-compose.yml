@@ -16,13 +16,13 @@ services:
       - "--reload"
     environment:
       - PYTHONUNBUFFERED=1
-      - ROSTER_API_DEBUG=1
-      - ROSTER_API_ETCD_HOST=Etcd
-      - ROSTER_API_POSTGRES_HOST=Postgres
-      - ROSTER_API_POSTGRES_PORT=5432
-      - ROSTER_API_POSTGRES_DB=rosterdb
-      - ROSTER_API_RABBITMQ_HOST=Rabbitmq
-      - ROSTER_API_GITHUB_APP_ID=368182
+      - DEBUG=1
+      - ETCD_HOST=Etcd
+      - POSTGRES_HOST=Postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rosterdb
+      - RABBITMQ_HOST=Rabbitmq
+      - GITHUB_APP_ID=368182
     volumes:
       - ./roster_api:/app/roster_api
       - ./private_key.pem:/app/private_key.pem
