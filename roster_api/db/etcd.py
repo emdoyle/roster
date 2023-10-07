@@ -15,8 +15,6 @@ def get_etcd_client() -> etcd3.Etcd3Client:
     if ETCD_CLIENT is not None:
         return ETCD_CLIENT
 
-    import etcd3
-
     ETCD_CLIENT = etcd3.client(host=settings.ETCD_HOST, port=settings.ETCD_PORT)
     return ETCD_CLIENT
 

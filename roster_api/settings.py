@@ -28,6 +28,9 @@ RABBITMQ_HOST = env.str("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT = env.int("RABBITMQ_PORT", 5672)
 RABBITMQ_VHOST = env.str("RABBITMQ_VHOST", "/")
 
+QDRANT_HOST = env.str("QDRANT_HOST", "localhost")
+QDRANT_PORT = env.int("QDRANT_PORT", 6333)
+
 GITHUB_APP_PRIVATE_KEY = env.str("GITHUB_APP_PRIVATE_KEY", "private_key.pem")
 GITHUB_APP_ID = env.int("GITHUB_APP_ID", 123456)
 GITHUB_APP_WEBHOOK_SECRET = env.str("GITHUB_APP_WEBHOOK_SECRET", "turquoise")

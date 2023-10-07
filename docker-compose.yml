@@ -22,6 +22,7 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=rosterdb
       - RABBITMQ_HOST=Rabbitmq
+      - QDRANT_HOST=Qdrant
       - GITHUB_APP_ID=368182
     volumes:
       - ./roster_api:/app/roster_api
