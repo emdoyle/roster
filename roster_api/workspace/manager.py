@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 from typing import Optional
-
 import pydantic
 from roster_api import constants
 from roster_api.github.codebase_tools.tree import build_codebase_tree
@@ -23,7 +22,6 @@ class WorkspaceManager:
     def __init__(self, rmq_client: Optional[RabbitMQClient] = None):
         self.rmq = rmq_client or get_rabbitmq()
         self._fs_lock = asyncio.Lock()
-
     async def setup(self):
         await self.rmq.register_callback(
             constants.WORKSPACE_QUEUE, self._handle_incoming_message
@@ -33,7 +31,6 @@ class WorkspaceManager:
         await self.rmq.deregister_callback(
             constants.WORKSPACE_QUEUE, self._handle_incoming_message
         )
-
     async def build_codebase_tree(self, github_service: GithubService) -> str:
         async with self._fs_lock:
             git_workspace = GitWorkspace.setup(
@@ -44,7 +41,6 @@ class WorkspaceManager:
             )
             git_workspace.force_to_latest()
             return build_codebase_tree(git_workspace.root_dir)
-
     async def get_base_hash(
         self, github_service: GithubService, branch: str = "main"
     ) -> str:
@@ -61,7 +57,6 @@ class WorkspaceManager:
                 #   (internal to GitWorkspace)
                 git_workspace.checkout_branch(branch=branch)
             return git_workspace.get_current_head_sha()
-
     async def _handle_incoming_message(self, message: str):
         try:
             message_data = json.loads(message)
@@ -88,7 +83,6 @@ class WorkspaceManager:
             logger.error(
                 "(workspace-mgr) Failed to validate message: %s, %s", message_data, e
             )
-
     async def handle_workspace_message(self, message: WorkspaceMessage):
         try:
             message_payload = WorkflowCodeReportPayload(**message.data)
@@ -142,7 +136,6 @@ class WorkspaceManager:
             head=github_info.branch_name,
         )
         logger.info("Created PR for %s: %s", github_info.repository_name, pr_url)
-
     async def handle_tool_message(self, message: ToolMessage):
         if message.sender is None:
             logger.debug(
@@ -172,7 +165,6 @@ class WorkspaceManager:
             await agent_inbox.send_tool_response(
                 invocation_id=message.id, tool=message.tool, data=result
             )
-
     async def _tool_workspace_file_reader(self, message: ToolMessage) -> dict:
         # NOTE: input format is data={inputs: {record_id: ..., workflow: ..., filepaths: ...}}
         #   and output format is data={files: [{filename: ..., text: ..., metadata: ...}, ...]}
