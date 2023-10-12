@@ -30,8 +30,7 @@ def get_identity(name: str):
     except errors.IdentityNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
 
-
-@router.patch("/identities/{name}", tags=["IdentityResource"])
+@router.patch("/identities", tags=["IdentityResource"])
 def update_identity(identity: IdentitySpec):
     try:
         return IdentityService().update_identity(identity)

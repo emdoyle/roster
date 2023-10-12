@@ -30,8 +30,7 @@ def get_agent(name: str):
     except errors.AgentNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
 
-
-@router.patch("/agents/{name}", tags=["AgentResource"])
+@router.patch("/agents", tags=["AgentResource"])
 def update_agent(agent: AgentSpec):
     try:
         return AgentService().update_agent(agent)
