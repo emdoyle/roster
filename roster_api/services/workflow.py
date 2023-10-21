@@ -8,12 +8,7 @@ from roster_api.constants import WORKFLOW_ROUTER_QUEUE
 from roster_api.db.etcd import get_etcd_client
 from roster_api.messaging.rabbitmq import RabbitMQClient, get_rabbitmq
 from roster_api.models.common import TypedResult
-from roster_api.models.workflow import (
-    WorkflowDerivedState,
-    WorkflowRecord,
-    WorkflowResource,
-    WorkflowSpec,
-)
+from roster_api.models.workflow import WorkflowRecord, WorkflowResource, WorkflowSpec
 from roster_api.util.serialization import deserialize_from_etcd, serialize
 
 logger = logging.getLogger(constants.LOGGER_NAME)

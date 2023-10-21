@@ -35,6 +35,10 @@ def _workflow_inputs_are_valid(workflow_spec: WorkflowSpec, payload_inputs: dict
     )
 
 
+# NOTE: because the queue scope includes the namespace,
+#   an instance of WorkflowRouter is 1:1 with namespace
+#   Should consider removing namespace from roster-admin queues (or using a constant)
+#   or consider how to manage potentially many concurrent WorkflowRouters for each cluster
 class WorkflowRouter:
     def __init__(self, rmq_client: Optional[RabbitMQClient] = None):
         self.rmq: RabbitMQClient = rmq_client or get_rabbitmq()

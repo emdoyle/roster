@@ -1,0 +1,43 @@
+{
+  "name": "ProcessCodebase",
+  "apiVersion": "v1",
+  "description": "Process a codebase into artifacts and models useful for future work",
+  "team": "RosterTeam",
+  "inputs": [
+    {
+      "type": "text",
+      "name": "project_description"
+    },
+    {
+      "type": "text",
+      "name": "codebase_tree"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "text",
+      "name": "codebase_summary"
+    }
+  ],
+  "steps": {
+    "Identify": {
+      "role": "SoftwareArchitect",
+      "action": "IdentifyDomains",
+      "inputMap": {
+        "project_description": "workflow.project_description",
+        "codebase_tree": "workflow.codebase_tree"
+      }
+    },
+    "Summarize": {
+      "role": "SoftwareArchitect",
+      "action": "SummarizeCodebase",
+      "inputMap": {
+        "codebase_tree": "workflow.codebase_tree",
+        "domains": "Identify.domains"
+      },
+      "outputMap": {
+        "summary": "codebase_summary"
+      }
+    }
+  }
+}
