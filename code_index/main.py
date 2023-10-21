@@ -3,27 +3,15 @@ import logging.handlers
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from code_index.db.postgres import setup_postgres, teardown_postgres
 from code_index.messaging.rabbitmq import setup_rabbitmq, teardown_rabbitmq
-from code_index.singletons import (
-    get_roster_github_app,
-    get_workflow_router,
-    get_workspace_manager,
-)
-from code_index.watchers.all import setup_watchers, teardown_watchers
+from code_index.singletons import get_github_app
 
 from . import constants, settings
-from .api.activity import router as activity_router
-from .api.agent import router as agent_router
-from .api.commands import router as commands_router
 from .api.github import router as github_router
-from .api.identity import router as identity_router
-from .api.team import router as team_router
-from .api.updates import router as updates_router
-from .api.workflow import router as workflow_router
 
 logger = logging.getLogger(constants.LOGGER_NAME)
 logger.setLevel(settings.SERVER_LOG_LEVEL)
@@ -56,30 +44,15 @@ def setup_logging():
     logs_enabled = True
 
 
-workflow_message_router = get_workflow_router()
-workspace_manager = get_workspace_manager()
-roster_github_app = get_roster_github_app()
+github_app = get_github_app()
 
 
 async def setup():
     setup_logging()
     await asyncio.gather(setup_postgres(), setup_rabbitmq())
-    # NOTE: etcd uses a separate Thread due to blocking I/O
-    #   currently does not kill the main thread on connection error (but probably should)
-    setup_watchers()
-    # Other high-level controllers, actors setup here
-    # TODO: consider moving within roster_orchestration?
-    await asyncio.gather(workflow_message_router.setup(), workspace_manager.setup())
-    await roster_github_app.setup()
 
 
 async def teardown():
-    # Other high-level controllers, actors teardown here
-    await roster_github_app.teardown()
-    await asyncio.gather(
-        workflow_message_router.teardown(), workspace_manager.teardown()
-    )
-    teardown_watchers()
     await asyncio.gather(teardown_postgres(), teardown_rabbitmq())
 
 
@@ -93,26 +66,15 @@ async def lifespan(app: FastAPI):
 
 
 def get_app():
-    app = FastAPI(title="Roster API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Code Indexer API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allows all origins
+        allow_origins=["*"],
         allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods
-        allow_headers=["*"],  # Allows all headers
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
-    api_router = APIRouter()
-
-    api_router.include_router(agent_router)
-    api_router.include_router(activity_router)
-    api_router.include_router(identity_router)
-    api_router.include_router(team_router)
-    api_router.include_router(updates_router)
-    api_router.include_router(workflow_router)
-    api_router.include_router(commands_router, prefix="/commands")
-
-    app.include_router(api_router, prefix=f"/{constants.API_VERSION}")
     app.include_router(github_router, prefix="/github")
     return app
 

@@ -35,7 +35,7 @@ async def setup_rabbitmq(retries: int = 10, delay: float = 2):
                 await asyncio.sleep(delay)
             else:
                 logger.debug("(setup_rabbitmq): No more retries")
-                raise errors.RosterAPIError(
+                raise errors.CodeIndexError(
                     f"Could not connect to RabbitMQ after {retries} retries"
                 ) from e
 
