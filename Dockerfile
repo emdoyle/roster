@@ -22,8 +22,8 @@ COPY ./poetry.lock ./pyproject.toml /app/
 RUN poetry config virtualenvs.create false \
     && poetry install --no-root
 
-COPY ./roster_api /app/roster_api
+COPY ./code_index /app/code_index
 
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "roster-api"]
+CMD ["poetry", "run", "code-index"]

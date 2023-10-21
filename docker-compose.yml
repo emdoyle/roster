@@ -8,7 +8,7 @@ services:
       - "run"
       - "uvicorn"
       - "--factory"
-      - "roster_api.main:get_app"
+      - "code_index.main:get_app"
       - "--host"
       - "0.0.0.0"
       - "--port"
@@ -16,44 +16,30 @@ services:
       - "--reload"
     environment:
       - PYTHONUNBUFFERED=1
-      - ROSTER_API_DEBUG=1
-      - ROSTER_API_ETCD_HOST=Etcd
-      - ROSTER_API_POSTGRES_HOST=Postgres
-      - ROSTER_API_POSTGRES_PORT=5432
-      - ROSTER_API_POSTGRES_DB=rosterdb
-      - ROSTER_API_RABBITMQ_HOST=Rabbitmq
-      - ROSTER_API_GITHUB_APP_ID=368182
+      - DEBUG=1
+      - ETCD_HOST=Etcd
+      - POSTGRES_HOST=Postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=main
+      - RABBITMQ_HOST=Rabbitmq
+      - GITHUB_APP_ID=368182
     volumes:
-      - ./roster_api:/app/roster_api
+      - ./code_index:/app/code_index
       - ./private_key.pem:/app/private_key.pem
     ports:
       - "7888:7888"
     depends_on:
-      - Etcd
       - Postgres
+      - Rabbitmq
   Postgres:
     image: postgres:latest
     environment:
-      - POSTGRES_DB=rosterdb
+      - POSTGRES_DB=main
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
       - "5432:5432"
-  Etcd:
-    image: 'bitnami/etcd:latest'
-    environment:
-      - ALLOW_NONE_AUTHENTICATION=yes
-      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
-    ports:
-      - "2379:2379"
-      - "2380:2380"
   Rabbitmq:
     image: "rabbitmq:management"
     ports:
       - "15672:15672"
       - "5672:5672"
-  Qdrant:
-    image: "qdrant/qdrant:latest"
-    ports:
-      - "6333:6333"
-    volumes:
-      - ./qdrant_storage:/qdrant/storage
